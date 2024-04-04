@@ -48,7 +48,7 @@ func (p Provider) DataSources(_ context.Context) []func() datasource.DataSource 
 
 // Metadata implements provider.Provider.
 func (p Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "toy"
+	resp.TypeName = "InterfaceTest"
 }
 
 // Resources implements provider.Provider.
@@ -64,8 +64,22 @@ func (p Provider) Resources(_ context.Context) []func() resource.Resource {
 func (p Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
-			"dir": schema.StringAttribute{
+			"username": schema.StringAttribute{
 				Required: true,
+			},
+			"password": schema.StringAttribute{
+				Optional: true,
+			},
+			"port": schema.Int64Attribute{
+				Required: true,
+				//Optional: true,
+				//Computed: true,
+				//Default: int64default.StaticInt64(22),
+			},
+			"sshkey": schema.StringAttribute{
+				Optional: true,
+				// Will need to add eventually
+				//Validators: []validator.String{stringvalidator.AtLeastOneOf(path.MatchRoot("d")...)},
 			},
 		},
 	}

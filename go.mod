@@ -1,6 +1,8 @@
 module github.com/Juniper/junos-terraform
 
-go 1.20
+go 1.21
+
+toolchain go1.22.1
 
 require (
 	github.com/BurntSushi/toml v0.3.1
@@ -53,6 +55,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.12.0 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
+	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0 // indirect
 	github.com/hashicorp/terraform-plugin-go v0.22.0 // indirect
 	github.com/hashicorp/terraform-plugin-log v0.9.0 // indirect
 	github.com/hashicorp/terraform-registry-address v0.2.3 // indirect
