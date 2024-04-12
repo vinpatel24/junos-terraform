@@ -21,7 +21,11 @@ type Provider struct {
 }
 
 type providerModel struct {
-	Dir types.String `tfsdk:"dir"`
+	Host     types.String `tfsdk:"host"`
+	Username types.String `tfsdk:"username"`
+	Password types.String `tfsdk:"password"`
+	Port     types.Int64  `tfsdk:"port"`
+	SshKey   types.String `tfsdk:"sshkey"`
 }
 
 // ProviderConfig is to hold client information
@@ -33,8 +37,7 @@ type ProviderConfig struct {
 // Configure implements provider.Provider.
 func (p Provider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var config providerModel
-	d := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(d...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -54,9 +57,9 @@ func (p Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *
 // Resources implements provider.Provider.
 func (p Provider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		func() resource.Resource {
-			return new(resourceInterfacesInterfaceUnitFamilyInetAddressName)
-		},
+		func() resource.Resource { return new(resourceInterfacesInterfaceUnitFamilyInetAddressName) },
+		func() resource.Resource { return new(resourceDestoryCommit) },
+		func() resource.Resource { return new(resourceDeviceCommit) },
 	}
 }
 
@@ -64,6 +67,9 @@ func (p Provider) Resources(_ context.Context) []func() resource.Resource {
 func (p Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
+			"host": schema.StringAttribute{
+				Required: true,
+			},
 			"username": schema.StringAttribute{
 				Required: true,
 			},

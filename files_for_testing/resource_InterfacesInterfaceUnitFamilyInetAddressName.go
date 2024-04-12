@@ -89,7 +89,6 @@ func (r *resourceInterfacesInterfaceUnitFamilyInetAddressName) Create(ctx contex
 	// Get the data and set
 	var plan interfacesInterfaceUnitFamilyInetAddressNameModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	// Check for errors
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -115,41 +114,35 @@ func (r *resourceInterfacesInterfaceUnitFamilyInetAddressName) Read(ctx context.
 	// Get the data and set
 	var state interfacesInterfaceUnitFamilyInetAddressNameModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	// Check for errors
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Marshall group and check
 	var config xmlInterfacesInterfaceUnitFamilyInetAddressName
-	id := config.Groups.Name
-	err := r.client.MarshalGroup(id, config)
+	err := r.client.MarshalGroup(state.Name.ValueString(), &config)
 	if err != nil {
+		if strings.Contains(err.Error(), "ound") {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Failed while Reading", err.Error())
 		return
 	}
 
-	// Check values
-	if err := resp.State.Set(ctx, config.Groups.V_interface.V_name); err != nil {
-		return
-	}
-	if err := resp.State.Set(ctx, config.Groups.V_interface.V_unit.V_name__1); err != nil {
-		return
-	}
-	if err := resp.State.Set(ctx, config.Groups.V_interface.V_unit.V_address.V_name__2); err != nil {
-		return
-	}
+	state.Name = types.StringPointerValue(config.Groups.V_interface.V_name)
+	state.Name1 = types.StringPointerValue(config.Groups.V_interface.V_unit.V_name__1)
+	state.Name2 = types.StringPointerValue(config.Groups.V_interface.V_unit.V_address.V_name__2)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-
 }
 
 // Update implements resource.Resource.
 func (r *resourceInterfacesInterfaceUnitFamilyInetAddressName) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get the data and set
 	var plan interfacesInterfaceUnitFamilyInetAddressNameModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	// Check for errors
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -172,8 +165,7 @@ func (r *resourceInterfacesInterfaceUnitFamilyInetAddressName) Update(ctx contex
 // Delete implements resource.Resource.
 func (r *resourceInterfacesInterfaceUnitFamilyInetAddressName) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state interfacesInterfaceUnitFamilyInetAddressNameModel
-	d := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(d...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -183,7 +175,7 @@ func (r *resourceInterfacesInterfaceUnitFamilyInetAddressName) Delete(ctx contex
 		if strings.Contains(err.Error(), "ound") {
 			return
 		}
-		resp.Diagnostics.AddError("Failed while deleting dile", err.Error())
+		resp.Diagnostics.AddError("Failed while deleting", err.Error())
 		return
 	}
 }
