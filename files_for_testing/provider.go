@@ -41,7 +41,26 @@ func (p Provider) Configure(ctx context.Context, req provider.ConfigureRequest, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	resp.ResourceData = config.Dir.ValueString()
+
+	clientConfig := Config{
+		Host:     config.Host.ValueString(),
+		Port:     int(config.Port.ValueInt64()),
+		Username: config.Username.ValueString(),
+		Password: config.Password.ValueString(),
+		SSHKey:   config.SshKey.ValueString(),
+	}
+
+	client, err := clientConfig.Client()
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create client", err.Error())
+		return
+	}
+
+	var providerConfig ProviderConfig
+	providerConfig.Client = client
+	providerConfig.Host = config.Host.ValueString()
+
+	resp.ResourceData = providerConfig
 }
 
 // DataSources implements provider.Provider.

@@ -2,7 +2,7 @@ module github.com/Juniper/junos-terraform
 
 go 1.21
 
-toolchain go1.22.1
+//toolchain go1.22.1
 
 require (
 	github.com/BurntSushi/toml v0.3.1
