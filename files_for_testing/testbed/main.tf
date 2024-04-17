@@ -3,7 +3,7 @@
 terraform {
 	required_providers {
 		jtaf= {
-			source = "juniper/jtaf"
+			source = "juniper/providers/jtaf"
 			version = "23.11.101"
 		}
 	}
