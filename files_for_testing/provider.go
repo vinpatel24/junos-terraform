@@ -70,7 +70,7 @@ func (p Provider) DataSources(_ context.Context) []func() datasource.DataSource 
 
 // Metadata implements provider.Provider.
 func (p Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "InterfaceTest"
+	resp.TypeName = "jtaf"
 }
 
 // Resources implements provider.Provider.
