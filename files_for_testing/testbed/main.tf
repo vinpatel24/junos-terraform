@@ -2,14 +2,14 @@
 
 terraform {
 	required_providers {
-		junos-vptx = {
-			source = "juniper/providers/junos-vptx"
+		jtaf= {
+			source = "juniper/jtaf"
 			version = "23.11.101"
 		}
 	}
 }
 
-provider "junos-vptx" {
+provider "jtaf" {
 	host = "66.129.234.208"
 	port = 33012
 	username = "jcluser"
@@ -20,18 +20,18 @@ provider "junos-vptx" {
 module "vptx_1" {
 	source = "./vptx_1"
 
-	providers = {junos-vptx = junos-vptx}
+	providers = {jtaf= jtaf}
 
-	depends_on = [junos-vptx_destroycommit.commit-main]
+	depends_on = [jtaf_destroycommit.commit-main]
 }
 
 
-resource "junos-vptx_commit" "commit-main" {
+resource "jtaf_JunosDeviceCommit" "commit-main" {
 	resource_name = "commit"
 	depends_on = [module.vptx]
 }
 
-resource "junos-vptx_destroycommit" "commit-main" {
+resource "jtaf_JunosDestroyCommit" "commit-main" {
 	resource_name = "destroycommit"
 }
 	
