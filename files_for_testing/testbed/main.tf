@@ -2,36 +2,36 @@
 
 terraform {
 	required_providers {
-		junos-vqfx = {
-			source = "juniper/providers/junos-vqfx"
+		junos-vptx = {
+			source = "juniper/providers/junos-vptx"
 			version = "23.11.101"
 		}
 	}
 }
 
-provider "junos-vqfx" {
-	host = "localhost"
-	port = 8300
-	username = "root"
-	password = "juniper123"
+provider "junos-vptx" {
+	host = "66.129.234.208"
+	port = 33012
+	username = "jcluser"
+	password = "Juniper!1"
 	sshkey = ""
 }
 
-module "vqfx_1" {
-	source = "./vqfx_1"
+module "vptx_1" {
+	source = "./vptx_1"
 
-	providers = {junos-vqfx = junos-vqfx}
+	providers = {junos-vptx = junos-vptx}
 
-	depends_on = [junos-vqfx_destroycommit.commit-main]
+	depends_on = [junos-vptx_destroycommit.commit-main]
 }
 
 
-resource "junos-vqfx_commit" "commit-main" {
+resource "junos-vptx_commit" "commit-main" {
 	resource_name = "commit"
-	depends_on = [module.vqfx]
+	depends_on = [module.vptx]
 }
 
-resource "junos-vqfx_destroycommit" "commit-main" {
+resource "junos-vptx_destroycommit" "commit-main" {
 	resource_name = "destroycommit"
 }
 	

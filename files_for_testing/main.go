@@ -26,7 +26,7 @@ import (
 func main() {
 	ctx := context.Background()
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/patelv/toy",
+		Address: "registry.terraform.io/patelv/InterfaceTest",
 	}
 
 	err := providerserver.Serve(ctx, newProvider, opts)

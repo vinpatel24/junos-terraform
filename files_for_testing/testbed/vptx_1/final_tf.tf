@@ -1,7 +1,7 @@
 terraform {
 	required_providers {
 		junos-vptx = {
-			source = "juniper/providers/junos-vqfx"
+			source = "juniper/providers/junos-vptx"
 			version = "23.11.101"
 		}
 	}
