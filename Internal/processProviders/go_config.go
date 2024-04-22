@@ -19,7 +19,7 @@ const providerConfigContent = `// Copyright (c) 2017-2022, Juniper Networks Inc.
 package main
 
 import(
-	"terraform-provider-junos-%+v/netconf"
+	"github.com/Juniper/junos-terraform/terraform_providers/netconf"
 )
 
 // Config is the configuration structure used to instantiate the Netconf provider.
