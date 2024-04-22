@@ -22,7 +22,7 @@ module "vptx_1" {
 
 	providers = {jtaf= jtaf}
 
-	depends_on = [jtaf_destroycommit.commit-main]
+	depends_on = [jtaf_JunosDestroyCommit.commit-main]
 }
 
 
