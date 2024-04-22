@@ -11,7 +11,7 @@ terraform {
 
 provider "jtaf" {
 	host = "66.129.234.208"
-	port = 33012
+	port = 48012
 	username = "jcluser"
 	password = "Juniper!1"
 	sshkey = ""
