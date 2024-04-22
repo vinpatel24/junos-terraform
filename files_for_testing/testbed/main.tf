@@ -28,7 +28,7 @@ module "vptx_1" {
 
 resource "jtaf_JunosDeviceCommit" "commit-main" {
 	resource_name = "commit"
-	depends_on = [module.vptx]
+	depends_on = [module.vptx_1]
 }
 
 resource "jtaf_JunosDestroyCommit" "commit-main" {
