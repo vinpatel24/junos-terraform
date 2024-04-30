@@ -120,7 +120,7 @@ func (r *resourceInterfacesInterfaceUnitFamilyInetAddressName) Read(ctx context.
 
 	// Marshall group and check
 	var config xmlInterfacesInterfaceUnitFamilyInetAddressName
-	err := r.client.MarshalGroup(state.Name.ValueString(), &config)
+	err := r.client.MarshalGroup(state.ResourceName.ValueString(), &config)
 	if err != nil {
 		if strings.Contains(err.Error(), "ound") {
 			resp.State.RemoveResource(ctx)
