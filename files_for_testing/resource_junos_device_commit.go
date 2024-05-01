@@ -64,7 +64,7 @@ func (r *resourceDeviceCommit) Schema(_ context.Context, req resource.SchemaRequ
 
 func (r *resourceDeviceCommit) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 
-	var plan interfacesInterfaceUnitFamilyInetAddressNameModel
+	var plan deviceCommitModel
 	//id := plan.ResourceName.ValueString()
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
