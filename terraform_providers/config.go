@@ -17,8 +17,12 @@
 package main
 
 import(
+<<<<<<< HEAD:terraform_providers/config.go
 //	"terraform-provider-junos-vsrx/netconf"
         "github.com/Juniper/junos-terraform/terraform_providers/netconf"
+=======
+	"github.com/Juniper/junos-terraform/terraform_providers/netconf"
+>>>>>>> master:Internal/processProviders/go_config.go
 )
 
 // Config is the configuration structure used to instantiate the Netconf provider.
