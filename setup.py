@@ -7,11 +7,11 @@ setup(
     url='https://github.com/aburston/junos-terraform',
     author="Juniper Networks",
     description="Junos Terraform Framework",
-    #packages=find_packages(),
     packages=["junosterraform", "jtaf_pyang_plugin", "terraform_provider"],
     scripts=["junosterraform/jtaf-provider", "jtaf_pyang_plugin/jtaf-pyang-plugindir", "junosterraform/jtaf-xml2tf"],
     package_data = {
-        "terraform_provider": [ "*", "netconf/*", "templates/*" ]
+        "terraform_provider": [ "*", "netconf/*" ],
+        "junosterraform": [ "templates/*" ]
     },
     install_requires=[
         'pytest',
