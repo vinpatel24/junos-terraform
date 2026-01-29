@@ -309,7 +309,259 @@
     <security>
         {%- if security.get("log") %}
         <log>
+            {%- if security.log.get("mode") %}
+            {%- if security.log.get("mode") is boolean %}
+            <mode/>
+                   {%- else %}
+            <mode>{{security.log.mode}}</mode>
+            {%- endif %}
+            {%- endif %}
+            {%- if security.log.get("report") %}
+            <report>
+            </report>
+            {%- endif %}
         </log>
+        {%- endif %}
+        {%- if security.get("screen") %}
+        <screen>
+            {%- if security.screen.get("ids_option") %}			  
+            {%- for i_3 in security.screen.get("ids_option") %}
+            {%- if security.screen.get("ids_option") %}
+            <ids-option>
+                {%- if i_3.get("name") %}
+                {%- if i_3.get("name") is boolean %}
+                <name/>
+                       {%- else %}
+                <name>{{i_3.name}}</name>
+                {%- endif %}
+                {%- endif %}
+                {%- if i_3.get("icmp") %}
+                <icmp>
+                    {%- if i_3.icmp.get("ping_death") %}
+                    {%- if i_3.icmp.get("ping_death") is boolean %}
+                    <ping-death/>
+                           {%- else %}
+                    <ping-death>{{i_3.icmp.ping_death}}</ping-death>
+                    {%- endif %}
+                    {%- endif %}
+                </icmp>
+                {%- endif %}
+                {%- if i_3.get("ip") %}
+                <ip>
+                    {%- if i_3.ip.get("source_route_option") %}
+                    {%- if i_3.ip.get("source_route_option") is boolean %}
+                    <source-route-option/>
+                           {%- else %}
+                    <source-route-option>{{i_3.ip.source_route_option}}</source-route-option>
+                    {%- endif %}
+                    {%- endif %}
+                    {%- if i_3.ip.get("tear_drop") %}
+                    {%- if i_3.ip.get("tear_drop") is boolean %}
+                    <tear-drop/>
+                           {%- else %}
+                    <tear-drop>{{i_3.ip.tear_drop}}</tear-drop>
+                    {%- endif %}
+                    {%- endif %}
+                </ip>
+                {%- endif %}
+                {%- if i_3.get("tcp") %}
+                <tcp>
+                    {%- if i_3.tcp.get("syn_flood") %}
+                    <syn-flood>
+                        {%- if i_3.tcp.syn_flood.get("alarm_threshold") %}
+                        {%- if i_3.tcp.syn_flood.get("alarm_threshold") is boolean %}
+                        <alarm-threshold/>
+                               {%- else %}
+                        <alarm-threshold>{{i_3.tcp.syn_flood.alarm_threshold}}</alarm-threshold>
+                        {%- endif %}
+                        {%- endif %}
+                        {%- if i_3.tcp.syn_flood.get("attack_threshold") %}
+                        {%- if i_3.tcp.syn_flood.get("attack_threshold") is boolean %}
+                        <attack-threshold/>
+                               {%- else %}
+                        <attack-threshold>{{i_3.tcp.syn_flood.attack_threshold}}</attack-threshold>
+                        {%- endif %}
+                        {%- endif %}
+                        {%- if i_3.tcp.syn_flood.get("source_threshold") %}
+                        {%- if i_3.tcp.syn_flood.get("source_threshold") is boolean %}
+                        <source-threshold/>
+                               {%- else %}
+                        <source-threshold>{{i_3.tcp.syn_flood.source_threshold}}</source-threshold>
+                        {%- endif %}
+                        {%- endif %}
+                        {%- if i_3.tcp.syn_flood.get("destination_threshold") %}
+                        {%- if i_3.tcp.syn_flood.get("destination_threshold") is boolean %}
+                        <destination-threshold/>
+                               {%- else %}
+                        <destination-threshold>{{i_3.tcp.syn_flood.destination_threshold}}</destination-threshold>
+                        {%- endif %}
+                        {%- endif %}
+                        {%- if i_3.tcp.syn_flood.get("timeout") %}
+                        {%- if i_3.tcp.syn_flood.get("timeout") is boolean %}
+                        <timeout/>
+                               {%- else %}
+                        <timeout>{{i_3.tcp.syn_flood.timeout}}</timeout>
+                        {%- endif %}
+                        {%- endif %}
+                    </syn-flood>
+                    {%- endif %}
+                    {%- if i_3.tcp.get("land") %}
+                    {%- if i_3.tcp.get("land") is boolean %}
+                    <land/>
+                           {%- else %}
+                    <land>{{i_3.tcp.land}}</land>
+                    {%- endif %}
+                    {%- endif %}
+                </tcp>
+                {%- endif %}
+            </ids-option>            {%- endif %}
+            {%- endfor %}
+            {%- endif %}
+        </screen>
+        {%- endif %}
+        {%- if security.get("policies") %}
+        <policies>
+            {%- if security.policies.get("policy") %}			  
+            {%- for i_3 in security.policies.get("policy") %}
+            {%- if security.policies.get("policy") %}
+            <policy>
+                {%- if i_3.get("from_zone_name") %}
+                {%- if i_3.get("from_zone_name") is boolean %}
+                <from-zone-name/>
+                       {%- else %}
+                <from-zone-name>{{i_3.from_zone_name}}</from-zone-name>
+                {%- endif %}
+                {%- endif %}
+                {%- if i_3.get("to_zone_name") %}
+                {%- if i_3.get("to_zone_name") is boolean %}
+                <to-zone-name/>
+                       {%- else %}
+                <to-zone-name>{{i_3.to_zone_name}}</to-zone-name>
+                {%- endif %}
+                {%- endif %}
+                {%- if i_3.get("policy") %}			  
+                {%- for i_4 in i_3.get("policy") %}
+                {%- if i_3.get("policy") %}
+                <policy>
+                    {%- if i_4.get("name") %}
+                    {%- if i_4.get("name") is boolean %}
+                    <name/>
+                           {%- else %}
+                    <name>{{i_4.name}}</name>
+                    {%- endif %}
+                    {%- endif %}
+                    {%- if i_4.get("match") %}
+                    <match>
+                        {%- if i_4.match.get("source_address") %}
+              {% for ii_6 in i_4.match.get("source_address") %}
+                            <source-address>{{ii_6}}</source-address>
+			  {% endfor %}
+                        {%- endif %}
+                        {%- if i_4.match.get("destination_address") %}
+              {% for ii_6 in i_4.match.get("destination_address") %}
+                            <destination-address>{{ii_6}}</destination-address>
+			  {% endfor %}
+                        {%- endif %}
+                        {%- if i_4.match.get("application") %}
+              {% for ii_6 in i_4.match.get("application") %}
+                            <application>{{ii_6}}</application>
+			  {% endfor %}
+                        {%- endif %}
+                    </match>
+                    {%- endif %}
+                    {%- if i_4.get("then") %}
+                    <then>
+                        {%- if i_4.then.get("permit") %}
+                        <permit>
+                        </permit>
+                        {%- endif %}
+                    </then>
+                    {%- endif %}
+                </policy>                {%- endif %}
+                {%- endfor %}
+                {%- endif %}
+            </policy>            {%- endif %}
+            {%- endfor %}
+            {%- endif %}
+        </policies>
+        {%- endif %}
+        {%- if security.get("zones") %}
+        <zones>
+            {%- if security.zones.get("security_zone") %}			  
+            {%- for i_3 in security.zones.get("security_zone") %}
+            {%- if security.zones.get("security_zone") %}
+            <security-zone>
+                {%- if i_3.get("name") %}
+                {%- if i_3.get("name") is boolean %}
+                <name/>
+                       {%- else %}
+                <name>{{i_3.name}}</name>
+                {%- endif %}
+                {%- endif %}
+                {%- if i_3.get("tcp_rst") %}
+                {%- if i_3.get("tcp_rst") is boolean %}
+                <tcp-rst/>
+                       {%- else %}
+                <tcp-rst>{{i_3.tcp_rst}}</tcp-rst>
+                {%- endif %}
+                {%- endif %}
+                {%- if i_3.get("screen") %}
+                {%- if i_3.get("screen") is boolean %}
+                <screen/>
+                       {%- else %}
+                <screen>{{i_3.screen}}</screen>
+                {%- endif %}
+                {%- endif %}
+                {%- if i_3.get("host_inbound_traffic") %}
+                <host-inbound-traffic>
+                    {%- if i_3.host_inbound_traffic.get("system_services") %}			  
+                    {%- for i_5 in i_3.host_inbound_traffic.get("system_services") %}
+                    {%- if i_3.host_inbound_traffic.get("system_services") %}
+                    <system-services>
+                        {%- if i_5.get("name") %}
+                        {%- if i_5.get("name") is boolean %}
+                        <name/>
+                               {%- else %}
+                        <name>{{i_5.name}}</name>
+                        {%- endif %}
+                        {%- endif %}
+                    </system-services>                    {%- endif %}
+                    {%- endfor %}
+                    {%- endif %}
+                    {%- if i_3.host_inbound_traffic.get("protocols") %}			  
+                    {%- for i_5 in i_3.host_inbound_traffic.get("protocols") %}
+                    {%- if i_3.host_inbound_traffic.get("protocols") %}
+                    <protocols>
+                        {%- if i_5.get("name") %}
+                        {%- if i_5.get("name") is boolean %}
+                        <name/>
+                               {%- else %}
+                        <name>{{i_5.name}}</name>
+                        {%- endif %}
+                        {%- endif %}
+                    </protocols>                    {%- endif %}
+                    {%- endfor %}
+                    {%- endif %}
+                </host-inbound-traffic>
+                {%- endif %}
+                {%- if i_3.get("interfaces") %}			  
+                {%- for i_4 in i_3.get("interfaces") %}
+                {%- if i_3.get("interfaces") %}
+                <interfaces>
+                    {%- if i_4.get("name") %}
+                    {%- if i_4.get("name") is boolean %}
+                    <name/>
+                           {%- else %}
+                    <name>{{i_4.name}}</name>
+                    {%- endif %}
+                    {%- endif %}
+                </interfaces>                {%- endif %}
+                {%- endfor %}
+                {%- endif %}
+            </security-zone>            {%- endif %}
+            {%- endfor %}
+            {%- endif %}
+        </zones>
         {%- endif %}
     </security>
     <snmp>
