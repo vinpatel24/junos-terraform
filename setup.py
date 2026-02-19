@@ -3,10 +3,9 @@ from setuptools.command.install import install
 
 setup(
     name='junosterraform',
-    version='1.0.1',
+    version='1.1.0',
     url='https://github.com/aburston/junos-terraform',
     tests_require=["pytest"],
-    test_suite="junosterraform.unit_tests",
     author="Juniper Networks",
     description="Junos Terraform Framework",
     packages=["junosterraform", "jtaf_pyang_plugin", "terraform_provider"],

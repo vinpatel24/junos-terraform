@@ -5,6 +5,7 @@ import subprocess
 import shutil
 import sys
 import unittest
+from subprocess import CalledProcessError
 
 class TestWorkflow(unittest.TestCase):
 
@@ -15,7 +16,7 @@ class TestWorkflow(unittest.TestCase):
 
 def test_yang2go():
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    yang_root = os.path.abspath(os.path.join(repo_root, "..", "yang"))
+    yang_root = os.path.abspath(os.path.join(repo_root, "examples", "yang"))
 
     print("repo_root:", repo_root)
     print("yang_root:", yang_root)
@@ -78,15 +79,22 @@ def test_yang2go():
     ]
 
     print("CMD:", cmd)
-    proc = subprocess.run(
-        cmd,
-        input=stdin_json,
-        text=True,
-        capture_output=True,
-        check=True,
-        cwd=repo_root,
-        env=env
-    )
+    try:
+        proc = subprocess.run(
+            cmd,
+            input=stdin_json,
+            text=True,
+            capture_output=True,
+            check=True,
+            cwd=repo_root,
+            env=env
+        )
+    except CalledProcessError as e:
+        # Debug output
+        print("RETURNCODE:", e.returncode)
+        print("STDOUT:\n", e.output)
+        print("STDERR:\n", e.stderr)
+        raise(e)
 
     # Debug output
     print("RETURNCODE:", proc.returncode)

@@ -86,9 +86,10 @@
         {# LEAF-LIST IF #}
 		
 		{% if ele.type=="leaf-list" %}
-              {{'{%'}} for ii_{{level}} in {{pathvar+'.get("'+path2variable(preparename(ele.name))+'")' }} {{'%}'}}
+		{{- printleaf(ele.path,ele.name,level,indexvar) -}}
+              {# {{'{%'}} for ii_{{level}} in {{pathvar+'.get("'+path2variable(preparename(ele.name))+'")' }} {{'%}'}}
 {{'\n'+' '*4*(level+1)}}<{{ele.name}}>{{'{{'}}ii_{{level}}{{'}}'}}</{{ele.name}}>
-			  {{'{%'}} endfor {{'%}'}}
+			  {{'{%'}} endfor {{'%}'}} #}
         {# LEAF-LIST ELSE #}
 		{% else %}
    
