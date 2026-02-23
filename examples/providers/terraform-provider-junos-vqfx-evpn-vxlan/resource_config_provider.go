@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/xml"
 	"strings"
+	"fmt"
+    "bytes"
+    "terraform-provider-junos-vqfx-evpn-vxlan/patch"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -11,6 +14,2255 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+var TrimmedSchemaJSON = `{
+  "path": "",
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "union",
+                        "name": "device-count",
+                        "path": "chassis/aggregated-devices/ethernet",
+                        "type": "leaf",
+                        "types": [
+                          {
+                            "path": "chassis/aggregated-devices/ethernet/device-count",
+                            "patterns": [
+                              "\u003c.*\u003e|$.*"
+                            ],
+                            "type": "string"
+                          },
+                          {
+                            "path": "chassis/aggregated-devices/ethernet/device-count",
+                            "type": "uint32"
+                          }
+                        ]
+                      }
+                    ],
+                    "name": "ethernet",
+                    "path": "chassis/aggregated-devices",
+                    "type": "container"
+                  }
+                ],
+                "name": "aggregated-devices",
+                "path": "chassis",
+                "type": "container"
+              }
+            ],
+            "name": "chassis",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "lengths": [
+                      {
+                        "max": 127,
+                        "min": 1,
+                        "path": "forwarding-options/storm-control-profiles/name"
+                      }
+                    ],
+                    "name": "name",
+                    "path": "forwarding-options/storm-control-profiles",
+                    "type": "leaf"
+                  },
+                  {
+                    "name": "all",
+                    "path": "forwarding-options/storm-control-profiles",
+                    "type": "container"
+                  }
+                ],
+                "key": "name",
+                "name": "storm-control-profiles",
+                "path": "forwarding-options",
+                "type": "list"
+              }
+            ],
+            "name": "forwarding-options",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "name": "name",
+                    "path": "interfaces/interface",
+                    "type": "leaf"
+                  },
+                  {
+                    "leaf-type": "string",
+                    "name": "description",
+                    "path": "interfaces/interface",
+                    "type": "leaf"
+                  },
+                  {
+                    "leaf-type": "empty",
+                    "name": "vlan-tagging",
+                    "path": "interfaces/interface",
+                    "type": "leaf"
+                  },
+                  {
+                    "children": [
+                      {
+                        "base-type": "string",
+                        "leaf-type": "jt:esi",
+                        "name": "identifier",
+                        "path": "interfaces/interface/esi",
+                        "type": "leaf"
+                      },
+                      {
+                        "leaf-type": "empty",
+                        "name": "all-active",
+                        "path": "interfaces/interface/esi",
+                        "type": "leaf"
+                      }
+                    ],
+                    "name": "esi",
+                    "path": "interfaces/interface",
+                    "type": "container"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "union",
+                            "name": "bundle",
+                            "path": "interfaces/interface/ether-options/ieee-802.3ad",
+                            "type": "leaf",
+                            "types": [
+                              {
+                                "path": "interfaces/interface/ether-options/ieee-802.3ad/bundle",
+                                "type": "string"
+                              },
+                              {
+                                "path": "interfaces/interface/ether-options/ieee-802.3ad/bundle",
+                                "patterns": [
+                                  "\u003c.*\u003e|$.*"
+                                ],
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        ],
+                        "name": "ieee-802.3ad",
+                        "path": "interfaces/interface/ether-options",
+                        "type": "container"
+                      }
+                    ],
+                    "name": "ether-options",
+                    "path": "interfaces/interface",
+                    "type": "container"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "empty",
+                            "name": "active",
+                            "path": "interfaces/interface/aggregated-ether-options/lacp",
+                            "type": "leaf"
+                          },
+                          {
+                            "enums": [
+                              {
+                                "id": "fast",
+                                "path": "interfaces/interface/aggregated-ether-options/lacp/periodic",
+                                "value": 0
+                              },
+                              {
+                                "id": "slow",
+                                "path": "interfaces/interface/aggregated-ether-options/lacp/periodic",
+                                "value": 1
+                              }
+                            ],
+                            "leaf-type": "enumeration",
+                            "name": "periodic",
+                            "path": "interfaces/interface/aggregated-ether-options/lacp",
+                            "type": "leaf"
+                          },
+                          {
+                            "base-type": "string",
+                            "leaf-type": "jt:mac-addr",
+                            "name": "system-id",
+                            "path": "interfaces/interface/aggregated-ether-options/lacp",
+                            "type": "leaf"
+                          }
+                        ],
+                        "name": "lacp",
+                        "path": "interfaces/interface/aggregated-ether-options",
+                        "type": "container"
+                      }
+                    ],
+                    "name": "aggregated-ether-options",
+                    "path": "interfaces/interface",
+                    "type": "container"
+                  },
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "name",
+                        "path": "interfaces/interface/unit",
+                        "type": "leaf"
+                      },
+                      {
+                        "leaf-type": "string",
+                        "name": "description",
+                        "path": "interfaces/interface/unit",
+                        "type": "leaf"
+                      },
+                      {
+                        "leaf-type": "string",
+                        "name": "vlan-id",
+                        "path": "interfaces/interface/unit",
+                        "type": "leaf"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "base-type": "string",
+                                    "leaf-type": "jt:ipv4prefix",
+                                    "name": "name",
+                                    "path": "interfaces/interface/unit/family/inet/address",
+                                    "type": "leaf"
+                                  }
+                                ],
+                                "key": "name",
+                                "name": "address",
+                                "ordered-by": "user",
+                                "path": "interfaces/interface/unit/family/inet",
+                                "type": "list"
+                              }
+                            ],
+                            "name": "inet",
+                            "path": "interfaces/interface/unit/family",
+                            "type": "container"
+                          },
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "leaf-type": "string",
+                                    "name": "members",
+                                    "ordered-by": "user",
+                                    "path": "interfaces/interface/unit/family/ethernet-switching/vlan",
+                                    "type": "leaf-list"
+                                  }
+                                ],
+                                "name": "vlan",
+                                "path": "interfaces/interface/unit/family/ethernet-switching",
+                                "type": "container"
+                              }
+                            ],
+                            "name": "ethernet-switching",
+                            "path": "interfaces/interface/unit/family",
+                            "type": "container"
+                          }
+                        ],
+                        "name": "family",
+                        "path": "interfaces/interface/unit",
+                        "type": "container"
+                      },
+                      {
+                        "base-type": "string",
+                        "leaf-type": "jt:mac-unicast",
+                        "name": "mac",
+                        "path": "interfaces/interface/unit",
+                        "type": "leaf"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "unit",
+                    "path": "interfaces/interface",
+                    "type": "list"
+                  }
+                ],
+                "key": "name",
+                "name": "interface",
+                "path": "interfaces",
+                "type": "list"
+              }
+            ],
+            "name": "interfaces",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "name": "name",
+                    "path": "policy-options/policy-statement",
+                    "type": "leaf"
+                  },
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "name",
+                        "path": "policy-options/policy-statement/term",
+                        "type": "leaf"
+                      },
+                      {
+                        "children": [
+                          {
+                            "enums": [
+                              {
+                                "id": "aggregate",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 0
+                              },
+                              {
+                                "id": "bgp",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 1
+                              },
+                              {
+                                "id": "direct",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 2
+                              },
+                              {
+                                "id": "dvmrp",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 3
+                              },
+                              {
+                                "id": "isis",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 4
+                              },
+                              {
+                                "id": "esis",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 5
+                              },
+                              {
+                                "id": "l2circuit",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 6
+                              },
+                              {
+                                "id": "l2vpn",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 7
+                              },
+                              {
+                                "id": "local",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 8
+                              },
+                              {
+                                "id": "ospf",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 9
+                              },
+                              {
+                                "id": "ospf2",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 10
+                              },
+                              {
+                                "id": "ospf3",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 11
+                              },
+                              {
+                                "id": "pim",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 12
+                              },
+                              {
+                                "id": "rip",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 13
+                              },
+                              {
+                                "id": "ripng",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 14
+                              },
+                              {
+                                "id": "static",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 15
+                              },
+                              {
+                                "id": "arp",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 16
+                              },
+                              {
+                                "id": "frr",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 17
+                              },
+                              {
+                                "id": "mpls",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 18
+                              },
+                              {
+                                "id": "ldp",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 19
+                              },
+                              {
+                                "id": "rsvp",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 20
+                              },
+                              {
+                                "id": "msdp",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 21
+                              },
+                              {
+                                "id": "route-target",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 22
+                              },
+                              {
+                                "id": "access",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 23
+                              },
+                              {
+                                "id": "access-internal",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 24
+                              },
+                              {
+                                "id": "anchor",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 25
+                              },
+                              {
+                                "id": "bgp-static",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 26
+                              },
+                              {
+                                "id": "vpls",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 27
+                              },
+                              {
+                                "id": "evpn",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 28
+                              },
+                              {
+                                "id": "spring-te",
+                                "path": "policy-options/policy-statement/term/from/protocol",
+                                "value": 29
+                              }
+                            ],
+                            "leaf-type": "enumeration",
+                            "name": "protocol",
+                            "ordered-by": "user",
+                            "path": "policy-options/policy-statement/term/from",
+                            "type": "leaf-list"
+                          },
+                          {
+                            "children": [
+                              {
+                                "base-type": "string",
+                                "leaf-type": "jt:ipprefix",
+                                "name": "address",
+                                "path": "policy-options/policy-statement/term/from/route-filter",
+                                "type": "leaf"
+                              },
+                              {
+                                "leaf-type": "string",
+                                "name": "exact",
+                                "path": "policy-options/policy-statement/term/from/route-filter",
+                                "type": "leaf"
+                              },
+                              {
+                                "leaf-type": "string",
+                                "name": "orlonger",
+                                "path": "policy-options/policy-statement/term/from/route-filter",
+                                "type": "leaf"
+                              },
+                              {
+                                "leaf-type": "string",
+                                "name": "prefix-length-range",
+                                "path": "policy-options/policy-statement/term/from/route-filter",
+                                "type": "leaf"
+                              }
+                            ],
+                            "key": "address choice-ident choice-value",
+                            "name": "route-filter",
+                            "ordered-by": "user",
+                            "path": "policy-options/policy-statement/term/from",
+                            "type": "list"
+                          }
+                        ],
+                        "name": "from",
+                        "path": "policy-options/policy-statement/term",
+                        "type": "container"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "leaf-type": "string",
+                                "name": "add",
+                                "path": "policy-options/policy-statement/term/then/community",
+                                "type": "leaf"
+                              },
+                              {
+                                "leaf-type": "string",
+                                "name": "community-name",
+                                "path": "policy-options/policy-statement/term/then/community",
+                                "type": "leaf"
+                              }
+                            ],
+                            "key": "choice-ident choice-value community-name",
+                            "name": "community",
+                            "ordered-by": "user",
+                            "path": "policy-options/policy-statement/term/then",
+                            "type": "list"
+                          },
+                          {
+                            "leaf-type": "empty",
+                            "name": "accept",
+                            "path": "policy-options/policy-statement/term/then",
+                            "type": "leaf"
+                          },
+                          {
+                            "leaf-type": "empty",
+                            "name": "reject",
+                            "path": "policy-options/policy-statement/term/then",
+                            "type": "leaf"
+                          }
+                        ],
+                        "name": "then",
+                        "path": "policy-options/policy-statement/term",
+                        "type": "container"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "term",
+                    "ordered-by": "user",
+                    "path": "policy-options/policy-statement",
+                    "type": "list"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "empty",
+                            "name": "per-packet",
+                            "path": "policy-options/policy-statement/then/load-balance",
+                            "type": "leaf"
+                          }
+                        ],
+                        "name": "load-balance",
+                        "path": "policy-options/policy-statement/then",
+                        "type": "container"
+                      }
+                    ],
+                    "name": "then",
+                    "path": "policy-options/policy-statement",
+                    "type": "container"
+                  }
+                ],
+                "key": "name",
+                "name": "policy-statement",
+                "path": "policy-options",
+                "type": "list"
+              },
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "name": "name",
+                    "path": "policy-options/community",
+                    "type": "leaf"
+                  },
+                  {
+                    "leaf-type": "string",
+                    "name": "members",
+                    "ordered-by": "user",
+                    "path": "policy-options/community",
+                    "type": "leaf-list"
+                  }
+                ],
+                "key": "name",
+                "name": "community",
+                "path": "policy-options",
+                "type": "list"
+              }
+            ],
+            "name": "policy-options",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "name",
+                        "path": "protocols/bgp/group",
+                        "type": "leaf"
+                      },
+                      {
+                        "enums": [
+                          {
+                            "id": "internal",
+                            "path": "protocols/bgp/group/type",
+                            "value": 0
+                          },
+                          {
+                            "id": "external",
+                            "path": "protocols/bgp/group/type",
+                            "value": 1
+                          }
+                        ],
+                        "leaf-type": "enumeration",
+                        "name": "type",
+                        "path": "protocols/bgp/group",
+                        "type": "leaf"
+                      },
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "empty",
+                            "name": "no-nexthop-change",
+                            "path": "protocols/bgp/group/multihop",
+                            "type": "leaf"
+                          }
+                        ],
+                        "name": "multihop",
+                        "path": "protocols/bgp/group",
+                        "type": "container"
+                      },
+                      {
+                        "base-type": "string",
+                        "leaf-type": "jt:ipaddr",
+                        "name": "local-address",
+                        "path": "protocols/bgp/group",
+                        "type": "leaf"
+                      },
+                      {
+                        "leaf-type": "empty",
+                        "name": "mtu-discovery",
+                        "path": "protocols/bgp/group",
+                        "type": "leaf"
+                      },
+                      {
+                        "base-type": "string",
+                        "leaf-type": "jt:policy-algebra",
+                        "name": "import",
+                        "ordered-by": "user",
+                        "path": "protocols/bgp/group",
+                        "type": "leaf-list"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "children": [
+                                      {
+                                        "children": [
+                                          {
+                                            "leaf-type": "union",
+                                            "name": "routing-uptime",
+                                            "path": "protocols/bgp/group/family/evpn/signaling/delay-route-advertisements/minimum-delay",
+                                            "type": "leaf",
+                                            "types": [
+                                              {
+                                                "path": "protocols/bgp/group/family/evpn/signaling/delay-route-advertisements/minimum-delay/routing-uptime",
+                                                "patterns": [
+                                                  "\u003c.*\u003e|$.*"
+                                                ],
+                                                "type": "string"
+                                              },
+                                              {
+                                                "path": "protocols/bgp/group/family/evpn/signaling/delay-route-advertisements/minimum-delay/routing-uptime",
+                                                "ranges": [
+                                                  {
+                                                    "max": 36000,
+                                                    "min": 1,
+                                                    "path": "protocols/bgp/group/family/evpn/signaling/delay-route-advertisements/minimum-delay/routing-uptime"
+                                                  }
+                                                ],
+                                                "type": "uint32"
+                                              }
+                                            ]
+                                          }
+                                        ],
+                                        "name": "minimum-delay",
+                                        "path": "protocols/bgp/group/family/evpn/signaling/delay-route-advertisements",
+                                        "type": "container"
+                                      }
+                                    ],
+                                    "name": "delay-route-advertisements",
+                                    "path": "protocols/bgp/group/family/evpn/signaling",
+                                    "type": "container"
+                                  }
+                                ],
+                                "name": "signaling",
+                                "path": "protocols/bgp/group/family/evpn",
+                                "type": "container"
+                              }
+                            ],
+                            "name": "evpn",
+                            "path": "protocols/bgp/group/family",
+                            "type": "container"
+                          }
+                        ],
+                        "name": "family",
+                        "path": "protocols/bgp/group",
+                        "type": "container"
+                      },
+                      {
+                        "base-type": "string",
+                        "leaf-type": "jt:policy-algebra",
+                        "name": "export",
+                        "ordered-by": "user",
+                        "path": "protocols/bgp/group",
+                        "type": "leaf-list"
+                      },
+                      {
+                        "leaf-type": "empty",
+                        "name": "vpn-apply-export",
+                        "path": "protocols/bgp/group",
+                        "type": "leaf"
+                      },
+                      {
+                        "base-type": "string",
+                        "leaf-type": "jt:areaid",
+                        "name": "cluster",
+                        "path": "protocols/bgp/group",
+                        "type": "leaf"
+                      },
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "string",
+                            "name": "as-number",
+                            "path": "protocols/bgp/group/local-as",
+                            "type": "leaf"
+                          }
+                        ],
+                        "name": "local-as",
+                        "path": "protocols/bgp/group",
+                        "type": "container"
+                      },
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "empty",
+                            "name": "multiple-as",
+                            "path": "protocols/bgp/group/multipath",
+                            "type": "leaf"
+                          }
+                        ],
+                        "name": "multipath",
+                        "path": "protocols/bgp/group",
+                        "type": "container"
+                      },
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "union",
+                            "name": "minimum-interval",
+                            "path": "protocols/bgp/group/bfd-liveness-detection",
+                            "type": "leaf",
+                            "types": [
+                              {
+                                "path": "protocols/bgp/group/bfd-liveness-detection/minimum-interval",
+                                "patterns": [
+                                  "\u003c.*\u003e|$.*"
+                                ],
+                                "type": "string"
+                              },
+                              {
+                                "path": "protocols/bgp/group/bfd-liveness-detection/minimum-interval",
+                                "ranges": [
+                                  {
+                                    "max": 255000,
+                                    "min": 1,
+                                    "path": "protocols/bgp/group/bfd-liveness-detection/minimum-interval"
+                                  }
+                                ],
+                                "type": "uint32"
+                              }
+                            ],
+                            "units": "milliseconds"
+                          },
+                          {
+                            "default": "3",
+                            "leaf-type": "union",
+                            "name": "multiplier",
+                            "path": "protocols/bgp/group/bfd-liveness-detection",
+                            "type": "leaf",
+                            "types": [
+                              {
+                                "path": "protocols/bgp/group/bfd-liveness-detection/multiplier",
+                                "patterns": [
+                                  "\u003c.*\u003e|$.*"
+                                ],
+                                "type": "string"
+                              },
+                              {
+                                "path": "protocols/bgp/group/bfd-liveness-detection/multiplier",
+                                "ranges": [
+                                  {
+                                    "max": 255,
+                                    "min": 1,
+                                    "path": "protocols/bgp/group/bfd-liveness-detection/multiplier"
+                                  }
+                                ],
+                                "type": "uint32"
+                              }
+                            ]
+                          }
+                        ],
+                        "name": "bfd-liveness-detection",
+                        "path": "protocols/bgp/group",
+                        "type": "container"
+                      },
+                      {
+                        "base-type": "string",
+                        "leaf-type": "jt:ipprefix",
+                        "name": "allow",
+                        "ordered-by": "user",
+                        "path": "protocols/bgp/group",
+                        "type": "leaf-list"
+                      },
+                      {
+                        "children": [
+                          {
+                            "base-type": "string",
+                            "leaf-type": "jt:ipaddr",
+                            "name": "name",
+                            "path": "protocols/bgp/group/neighbor",
+                            "type": "leaf"
+                          },
+                          {
+                            "leaf-type": "string",
+                            "lengths": [
+                              {
+                                "max": 255,
+                                "min": 1,
+                                "path": "protocols/bgp/group/neighbor/description"
+                              }
+                            ],
+                            "name": "description",
+                            "path": "protocols/bgp/group/neighbor",
+                            "type": "leaf"
+                          },
+                          {
+                            "leaf-type": "string",
+                            "name": "peer-as",
+                            "path": "protocols/bgp/group/neighbor",
+                            "type": "leaf"
+                          }
+                        ],
+                        "key": "name",
+                        "name": "neighbor",
+                        "ordered-by": "user",
+                        "path": "protocols/bgp/group",
+                        "type": "list"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "group",
+                    "ordered-by": "user",
+                    "path": "protocols/bgp",
+                    "type": "list"
+                  }
+                ],
+                "name": "bgp",
+                "path": "protocols",
+                "type": "container"
+              },
+              {
+                "children": [
+                  {
+                    "default": "mpls",
+                    "enums": [
+                      {
+                        "id": "mpls",
+                        "path": "protocols/evpn/encapsulation",
+                        "value": 0
+                      },
+                      {
+                        "id": "vxlan",
+                        "path": "protocols/evpn/encapsulation",
+                        "value": 1
+                      }
+                    ],
+                    "leaf-type": "enumeration",
+                    "name": "encapsulation",
+                    "path": "protocols/evpn",
+                    "type": "leaf"
+                  },
+                  {
+                    "default": "ingress-replication",
+                    "enums": [
+                      {
+                        "id": "ingress-replication",
+                        "path": "protocols/evpn/multicast-mode",
+                        "value": 0
+                      }
+                    ],
+                    "leaf-type": "enumeration",
+                    "name": "multicast-mode",
+                    "path": "protocols/evpn",
+                    "type": "leaf"
+                  },
+                  {
+                    "enums": [
+                      {
+                        "id": "advertise",
+                        "path": "protocols/evpn/default-gateway",
+                        "value": 0
+                      },
+                      {
+                        "id": "no-gateway-community",
+                        "path": "protocols/evpn/default-gateway",
+                        "value": 1
+                      },
+                      {
+                        "id": "do-not-advertise",
+                        "path": "protocols/evpn/default-gateway",
+                        "value": 2
+                      }
+                    ],
+                    "leaf-type": "enumeration",
+                    "name": "default-gateway",
+                    "path": "protocols/evpn",
+                    "type": "leaf"
+                  },
+                  {
+                    "leaf-type": "string",
+                    "name": "extended-vni-list",
+                    "path": "protocols/evpn",
+                    "type": "leaf-list"
+                  },
+                  {
+                    "leaf-type": "empty",
+                    "name": "no-core-isolation",
+                    "path": "protocols/evpn",
+                    "type": "leaf"
+                  }
+                ],
+                "name": "evpn",
+                "path": "protocols",
+                "type": "container"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "name",
+                        "path": "protocols/lldp/interface",
+                        "type": "leaf"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "interface",
+                    "ordered-by": "user",
+                    "path": "protocols/lldp",
+                    "type": "list"
+                  }
+                ],
+                "name": "lldp",
+                "path": "protocols",
+                "type": "container"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "name",
+                        "path": "protocols/igmp-snooping/vlan",
+                        "type": "leaf"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "vlan",
+                    "ordered-by": "user",
+                    "path": "protocols/igmp-snooping",
+                    "type": "list"
+                  }
+                ],
+                "name": "igmp-snooping",
+                "path": "protocols",
+                "type": "container"
+              }
+            ],
+            "name": "protocols",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "name": "name",
+                    "path": "routing-instances/instance",
+                    "type": "leaf"
+                  },
+                  {
+                    "enums": [
+                      {
+                        "id": "forwarding",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 0
+                      },
+                      {
+                        "id": "vrf",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 1
+                      },
+                      {
+                        "id": "no-forwarding",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 2
+                      },
+                      {
+                        "id": "l2vpn",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 3
+                      },
+                      {
+                        "id": "vpls",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 4
+                      },
+                      {
+                        "id": "virtual-switch",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 5
+                      },
+                      {
+                        "id": "l2backhaul-vpn",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 6
+                      },
+                      {
+                        "id": "virtual-router",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 7
+                      },
+                      {
+                        "id": "layer2-control",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 8
+                      },
+                      {
+                        "id": "mpls-internet-multicast",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 9
+                      },
+                      {
+                        "id": "evpn",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 10
+                      },
+                      {
+                        "id": "mpls-forwarding",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 11
+                      },
+                      {
+                        "id": "evpn-vpws",
+                        "path": "routing-instances/instance/instance-type",
+                        "value": 12
+                      }
+                    ],
+                    "leaf-type": "enumeration",
+                    "name": "instance-type",
+                    "path": "routing-instances/instance",
+                    "type": "leaf"
+                  },
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "name",
+                        "path": "routing-instances/instance/interface",
+                        "type": "leaf"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "interface",
+                    "path": "routing-instances/instance",
+                    "type": "list"
+                  },
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "rd-type",
+                        "path": "routing-instances/instance/route-distinguisher",
+                        "type": "leaf"
+                      }
+                    ],
+                    "name": "route-distinguisher",
+                    "path": "routing-instances/instance",
+                    "type": "container"
+                  },
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "community",
+                        "path": "routing-instances/instance/vrf-target",
+                        "type": "leaf"
+                      }
+                    ],
+                    "name": "vrf-target",
+                    "path": "routing-instances/instance",
+                    "type": "container"
+                  },
+                  {
+                    "name": "vrf-table-label",
+                    "path": "routing-instances/instance",
+                    "type": "container"
+                  },
+                  {
+                    "children": [
+                      {
+                        "name": "auto-export",
+                        "path": "routing-instances/instance/routing-options",
+                        "type": "container"
+                      }
+                    ],
+                    "name": "routing-options",
+                    "path": "routing-instances/instance",
+                    "type": "container"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "base-type": "string",
+                            "leaf-type": "jt:policy-algebra",
+                            "name": "export",
+                            "ordered-by": "user",
+                            "path": "routing-instances/instance/protocols/ospf",
+                            "type": "leaf-list"
+                          },
+                          {
+                            "children": [
+                              {
+                                "base-type": "string",
+                                "leaf-type": "jt:areaid",
+                                "name": "name",
+                                "path": "routing-instances/instance/protocols/ospf/area",
+                                "type": "leaf"
+                              },
+                              {
+                                "children": [
+                                  {
+                                    "leaf-type": "union",
+                                    "name": "name",
+                                    "path": "routing-instances/instance/protocols/ospf/area/interface",
+                                    "type": "leaf",
+                                    "types": [
+                                      {
+                                        "path": "routing-instances/instance/protocols/ospf/area/interface/name",
+                                        "type": "string"
+                                      },
+                                      {
+                                        "path": "routing-instances/instance/protocols/ospf/area/interface/name",
+                                        "patterns": [
+                                          "\u003c.*\u003e|$.*"
+                                        ],
+                                        "type": "string"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "leaf-type": "union",
+                                    "name": "metric",
+                                    "path": "routing-instances/instance/protocols/ospf/area/interface",
+                                    "type": "leaf",
+                                    "types": [
+                                      {
+                                        "path": "routing-instances/instance/protocols/ospf/area/interface/metric",
+                                        "patterns": [
+                                          "\u003c.*\u003e|$.*"
+                                        ],
+                                        "type": "string"
+                                      },
+                                      {
+                                        "path": "routing-instances/instance/protocols/ospf/area/interface/metric",
+                                        "ranges": [
+                                          {
+                                            "max": 65535,
+                                            "min": 1,
+                                            "path": "routing-instances/instance/protocols/ospf/area/interface/metric"
+                                          }
+                                        ],
+                                        "type": "uint16"
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "key": "name",
+                                "name": "interface",
+                                "ordered-by": "user",
+                                "path": "routing-instances/instance/protocols/ospf/area",
+                                "type": "list"
+                              }
+                            ],
+                            "key": "name",
+                            "name": "area",
+                            "ordered-by": "user",
+                            "path": "routing-instances/instance/protocols/ospf",
+                            "type": "list"
+                          }
+                        ],
+                        "name": "ospf",
+                        "path": "routing-instances/instance/protocols",
+                        "type": "container"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "enums": [
+                                  {
+                                    "id": "gateway-address",
+                                    "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes/advertise",
+                                    "value": 0
+                                  },
+                                  {
+                                    "id": "direct-nexthop",
+                                    "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes/advertise",
+                                    "value": 1
+                                  }
+                                ],
+                                "leaf-type": "enumeration",
+                                "name": "advertise",
+                                "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes",
+                                "type": "leaf"
+                              },
+                              {
+                                "enums": [
+                                  {
+                                    "id": "mpls",
+                                    "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes/encapsulation",
+                                    "value": 0
+                                  },
+                                  {
+                                    "id": "vxlan",
+                                    "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes/encapsulation",
+                                    "value": 1
+                                  }
+                                ],
+                                "leaf-type": "enumeration",
+                                "name": "encapsulation",
+                                "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes",
+                                "type": "leaf"
+                              },
+                              {
+                                "leaf-type": "union",
+                                "name": "vni",
+                                "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes",
+                                "type": "leaf",
+                                "types": [
+                                  {
+                                    "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes/vni",
+                                    "patterns": [
+                                      "\u003c.*\u003e|$.*"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  {
+                                    "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes/vni",
+                                    "ranges": [
+                                      {
+                                        "max": 16777214,
+                                        "min": 1,
+                                        "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes/vni"
+                                      }
+                                    ],
+                                    "type": "uint32"
+                                  }
+                                ]
+                              },
+                              {
+                                "base-type": "string",
+                                "leaf-type": "jt:policy-algebra",
+                                "name": "export",
+                                "ordered-by": "user",
+                                "path": "routing-instances/instance/protocols/evpn/ip-prefix-routes",
+                                "type": "leaf-list"
+                              }
+                            ],
+                            "name": "ip-prefix-routes",
+                            "path": "routing-instances/instance/protocols/evpn",
+                            "type": "container"
+                          }
+                        ],
+                        "name": "evpn",
+                        "path": "routing-instances/instance/protocols",
+                        "type": "container"
+                      }
+                    ],
+                    "name": "protocols",
+                    "path": "routing-instances/instance",
+                    "type": "container"
+                  }
+                ],
+                "key": "name",
+                "name": "instance",
+                "path": "routing-instances",
+                "type": "list"
+              }
+            ],
+            "name": "routing-instances",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "base-type": "string",
+                        "leaf-type": "jt:ipprefix",
+                        "name": "name",
+                        "path": "routing-options/static/route",
+                        "type": "leaf"
+                      },
+                      {
+                        "leaf-type": "union",
+                        "name": "next-hop",
+                        "ordered-by": "user",
+                        "path": "routing-options/static/route",
+                        "type": "leaf-list",
+                        "types": [
+                          {
+                            "path": "routing-options/static/route/next-hop",
+                            "type": "string"
+                          },
+                          {
+                            "path": "routing-options/static/route/next-hop",
+                            "patterns": [
+                              "\u003c.*\u003e|$.*"
+                            ],
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ],
+                    "key": "name",
+                    "name": "route",
+                    "ordered-by": "user",
+                    "path": "routing-options/static",
+                    "type": "list"
+                  }
+                ],
+                "name": "static",
+                "path": "routing-options",
+                "type": "container"
+              },
+              {
+                "base-type": "string",
+                "leaf-type": "jt:ipv4addr",
+                "name": "router-id",
+                "path": "routing-options",
+                "type": "leaf"
+              },
+              {
+                "children": [
+                  {
+                    "base-type": "string",
+                    "leaf-type": "jt:policy-algebra",
+                    "name": "export",
+                    "ordered-by": "user",
+                    "path": "routing-options/forwarding-table",
+                    "type": "leaf-list"
+                  },
+                  {
+                    "leaf-type": "empty",
+                    "name": "ecmp-fast-reroute",
+                    "path": "routing-options/forwarding-table",
+                    "type": "leaf"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "empty",
+                            "name": "evpn",
+                            "path": "routing-options/forwarding-table/chained-composite-next-hop/ingress",
+                            "type": "leaf"
+                          }
+                        ],
+                        "name": "ingress",
+                        "path": "routing-options/forwarding-table/chained-composite-next-hop",
+                        "type": "container"
+                      }
+                    ],
+                    "name": "chained-composite-next-hop",
+                    "path": "routing-options/forwarding-table",
+                    "type": "container"
+                  }
+                ],
+                "name": "forwarding-table",
+                "path": "routing-options",
+                "type": "container"
+              }
+            ],
+            "name": "routing-options",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "leaf-type": "string",
+                "name": "location",
+                "path": "snmp",
+                "type": "leaf"
+              },
+              {
+                "leaf-type": "string",
+                "name": "contact",
+                "path": "snmp",
+                "type": "leaf"
+              },
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "name": "name",
+                    "path": "snmp/community",
+                    "type": "leaf"
+                  },
+                  {
+                    "enums": [
+                      {
+                        "id": "read-only",
+                        "path": "snmp/community/authorization",
+                        "value": 0
+                      },
+                      {
+                        "id": "read-write",
+                        "path": "snmp/community/authorization",
+                        "value": 1
+                      }
+                    ],
+                    "leaf-type": "enumeration",
+                    "name": "authorization",
+                    "path": "snmp/community",
+                    "type": "leaf"
+                  }
+                ],
+                "key": "name",
+                "name": "community",
+                "ordered-by": "user",
+                "path": "snmp",
+                "type": "list"
+              }
+            ],
+            "name": "snmp",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "leaf-type": "union",
+                    "name": "interface-name",
+                    "path": "switch-options/vtep-source-interface",
+                    "type": "leaf",
+                    "types": [
+                      {
+                        "path": "switch-options/vtep-source-interface/interface-name",
+                        "type": "string"
+                      },
+                      {
+                        "path": "switch-options/vtep-source-interface/interface-name",
+                        "patterns": [
+                          "\u003c.*\u003e|$.*"
+                        ],
+                        "type": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "vtep-source-interface",
+                "path": "switch-options",
+                "type": "container"
+              },
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "name": "rd-type",
+                    "path": "switch-options/route-distinguisher",
+                    "type": "leaf"
+                  }
+                ],
+                "name": "route-distinguisher",
+                "path": "switch-options",
+                "type": "container"
+              },
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "name": "community",
+                    "path": "switch-options/vrf-target",
+                    "type": "leaf"
+                  },
+                  {
+                    "name": "auto",
+                    "path": "switch-options/vrf-target",
+                    "type": "container"
+                  }
+                ],
+                "name": "vrf-target",
+                "path": "switch-options",
+                "type": "container"
+              }
+            ],
+            "name": "switch-options",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "name",
+                        "path": "system/login/user",
+                        "type": "leaf"
+                      },
+                      {
+                        "leaf-type": "union",
+                        "name": "uid",
+                        "path": "system/login/user",
+                        "type": "leaf",
+                        "types": [
+                          {
+                            "path": "system/login/user/uid",
+                            "patterns": [
+                              "\u003c.*\u003e|$.*"
+                            ],
+                            "type": "string"
+                          },
+                          {
+                            "path": "system/login/user/uid",
+                            "ranges": [
+                              {
+                                "max": 64000,
+                                "min": 100,
+                                "path": "system/login/user/uid"
+                              }
+                            ],
+                            "type": "uint32"
+                          }
+                        ]
+                      },
+                      {
+                        "leaf-type": "string",
+                        "name": "class",
+                        "path": "system/login/user",
+                        "type": "leaf"
+                      },
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "string",
+                            "lengths": [
+                              {
+                                "max": 128,
+                                "min": 1,
+                                "path": "system/login/user/authentication/encrypted-password"
+                              }
+                            ],
+                            "name": "encrypted-password",
+                            "path": "system/login/user/authentication",
+                            "type": "leaf"
+                          }
+                        ],
+                        "name": "authentication",
+                        "path": "system/login/user",
+                        "type": "container"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "user",
+                    "path": "system/login",
+                    "type": "list"
+                  },
+                  {
+                    "leaf-type": "string",
+                    "lengths": [
+                      {
+                        "max": 2048,
+                        "min": 1,
+                        "path": "system/login/message"
+                      }
+                    ],
+                    "name": "message",
+                    "path": "system/login",
+                    "type": "leaf"
+                  }
+                ],
+                "name": "login",
+                "path": "system",
+                "type": "container"
+              },
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "lengths": [
+                      {
+                        "max": 128,
+                        "min": 1,
+                        "path": "system/root-authentication/encrypted-password"
+                      }
+                    ],
+                    "name": "encrypted-password",
+                    "path": "system/root-authentication",
+                    "type": "leaf"
+                  }
+                ],
+                "name": "root-authentication",
+                "path": "system",
+                "type": "container"
+              },
+              {
+                "leaf-type": "string",
+                "lengths": [
+                  {
+                    "max": 255,
+                    "min": 1,
+                    "path": "system/host-name"
+                  }
+                ],
+                "name": "host-name",
+                "path": "system",
+                "type": "leaf"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "enums": [
+                          {
+                            "id": "allow",
+                            "path": "system/services/ssh/root-login",
+                            "value": 0
+                          },
+                          {
+                            "id": "deny",
+                            "path": "system/services/ssh/root-login",
+                            "value": 1
+                          },
+                          {
+                            "id": "deny-password",
+                            "path": "system/services/ssh/root-login",
+                            "value": 2
+                          }
+                        ],
+                        "leaf-type": "enumeration",
+                        "name": "root-login",
+                        "path": "system/services/ssh",
+                        "type": "leaf"
+                      }
+                    ],
+                    "name": "ssh",
+                    "path": "system/services",
+                    "type": "container"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "default": "5",
+                                "leaf-type": "union",
+                                "name": "max-connections",
+                                "path": "system/services/extension-service/request-response/grpc",
+                                "type": "leaf",
+                                "types": [
+                                  {
+                                    "path": "system/services/extension-service/request-response/grpc/max-connections",
+                                    "patterns": [
+                                      "\u003c.*\u003e|$.*"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  {
+                                    "path": "system/services/extension-service/request-response/grpc/max-connections",
+                                    "ranges": [
+                                      {
+                                        "max": 30,
+                                        "min": 1,
+                                        "path": "system/services/extension-service/request-response/grpc/max-connections"
+                                      }
+                                    ],
+                                    "type": "uint32"
+                                  }
+                                ]
+                              }
+                            ],
+                            "name": "grpc",
+                            "path": "system/services/extension-service/request-response",
+                            "type": "container"
+                          }
+                        ],
+                        "name": "request-response",
+                        "path": "system/services/extension-service",
+                        "type": "container"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "base-type": "string",
+                                "leaf-type": "jt:ipprefix-optional",
+                                "name": "address",
+                                "ordered-by": "user",
+                                "path": "system/services/extension-service/notification/allow-clients",
+                                "type": "leaf-list"
+                              }
+                            ],
+                            "name": "allow-clients",
+                            "path": "system/services/extension-service/notification",
+                            "type": "container"
+                          }
+                        ],
+                        "name": "notification",
+                        "path": "system/services/extension-service",
+                        "type": "container"
+                      }
+                    ],
+                    "name": "extension-service",
+                    "path": "system/services",
+                    "type": "container"
+                  },
+                  {
+                    "children": [
+                      {
+                        "name": "ssh",
+                        "path": "system/services/netconf",
+                        "type": "container"
+                      }
+                    ],
+                    "name": "netconf",
+                    "path": "system/services",
+                    "type": "container"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "default": "3000",
+                            "leaf-type": "union",
+                            "name": "port",
+                            "path": "system/services/rest/http",
+                            "type": "leaf",
+                            "types": [
+                              {
+                                "path": "system/services/rest/http/port",
+                                "patterns": [
+                                  "\u003c.*\u003e|$.*"
+                                ],
+                                "type": "string"
+                              },
+                              {
+                                "path": "system/services/rest/http/port",
+                                "ranges": [
+                                  {
+                                    "max": 65535,
+                                    "min": 1024,
+                                    "path": "system/services/rest/http/port"
+                                  }
+                                ],
+                                "type": "uint32"
+                              }
+                            ]
+                          }
+                        ],
+                        "name": "http",
+                        "path": "system/services/rest",
+                        "type": "container"
+                      },
+                      {
+                        "leaf-type": "empty",
+                        "name": "enable-explorer",
+                        "path": "system/services/rest",
+                        "type": "leaf"
+                      }
+                    ],
+                    "name": "rest",
+                    "path": "system/services",
+                    "type": "container"
+                  }
+                ],
+                "name": "services",
+                "path": "system",
+                "type": "container"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "name",
+                        "path": "system/syslog/user",
+                        "type": "leaf"
+                      },
+                      {
+                        "children": [
+                          {
+                            "enums": [
+                              {
+                                "id": "any",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 0
+                              },
+                              {
+                                "id": "authorization",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 1
+                              },
+                              {
+                                "id": "daemon",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 2
+                              },
+                              {
+                                "id": "ftp",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 3
+                              },
+                              {
+                                "id": "ntp",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 4
+                              },
+                              {
+                                "id": "security",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 5
+                              },
+                              {
+                                "id": "kernel",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 6
+                              },
+                              {
+                                "id": "user",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 7
+                              },
+                              {
+                                "id": "dfc",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 8
+                              },
+                              {
+                                "id": "external",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 9
+                              },
+                              {
+                                "id": "firewall",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 10
+                              },
+                              {
+                                "id": "pfe",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 11
+                              },
+                              {
+                                "id": "conflict-log",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 12
+                              },
+                              {
+                                "id": "change-log",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 13
+                              },
+                              {
+                                "id": "interactive-commands",
+                                "path": "system/syslog/user/contents/name",
+                                "value": 14
+                              }
+                            ],
+                            "leaf-type": "enumeration",
+                            "name": "name",
+                            "path": "system/syslog/user/contents",
+                            "type": "leaf"
+                          },
+                          {
+                            "leaf-type": "empty",
+                            "name": "emergency",
+                            "path": "system/syslog/user/contents",
+                            "type": "leaf"
+                          }
+                        ],
+                        "key": "name",
+                        "name": "contents",
+                        "path": "system/syslog/user",
+                        "type": "list"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "user",
+                    "ordered-by": "user",
+                    "path": "system/syslog",
+                    "type": "list"
+                  },
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "lengths": [
+                          {
+                            "max": 1024,
+                            "min": 1,
+                            "path": "system/syslog/file/name"
+                          }
+                        ],
+                        "name": "name",
+                        "path": "system/syslog/file",
+                        "type": "leaf"
+                      },
+                      {
+                        "children": [
+                          {
+                            "enums": [
+                              {
+                                "id": "any",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 0
+                              },
+                              {
+                                "id": "authorization",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 1
+                              },
+                              {
+                                "id": "daemon",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 2
+                              },
+                              {
+                                "id": "ftp",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 3
+                              },
+                              {
+                                "id": "ntp",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 4
+                              },
+                              {
+                                "id": "security",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 5
+                              },
+                              {
+                                "id": "kernel",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 6
+                              },
+                              {
+                                "id": "user",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 7
+                              },
+                              {
+                                "id": "dfc",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 8
+                              },
+                              {
+                                "id": "external",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 9
+                              },
+                              {
+                                "id": "firewall",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 10
+                              },
+                              {
+                                "id": "pfe",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 11
+                              },
+                              {
+                                "id": "conflict-log",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 12
+                              },
+                              {
+                                "id": "change-log",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 13
+                              },
+                              {
+                                "id": "interactive-commands",
+                                "path": "system/syslog/file/contents/name",
+                                "value": 14
+                              }
+                            ],
+                            "leaf-type": "enumeration",
+                            "name": "name",
+                            "path": "system/syslog/file/contents",
+                            "type": "leaf"
+                          },
+                          {
+                            "leaf-type": "empty",
+                            "name": "any",
+                            "path": "system/syslog/file/contents",
+                            "type": "leaf"
+                          },
+                          {
+                            "leaf-type": "empty",
+                            "name": "notice",
+                            "path": "system/syslog/file/contents",
+                            "type": "leaf"
+                          },
+                          {
+                            "leaf-type": "empty",
+                            "name": "info",
+                            "path": "system/syslog/file/contents",
+                            "type": "leaf"
+                          }
+                        ],
+                        "key": "name",
+                        "name": "contents",
+                        "path": "system/syslog/file",
+                        "type": "list"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "file",
+                    "ordered-by": "user",
+                    "path": "system/syslog",
+                    "type": "list"
+                  }
+                ],
+                "name": "syslog",
+                "path": "system",
+                "type": "container"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "string",
+                        "name": "name",
+                        "path": "system/extensions/providers",
+                        "type": "leaf"
+                      },
+                      {
+                        "children": [
+                          {
+                            "leaf-type": "string",
+                            "name": "name",
+                            "path": "system/extensions/providers/license-type",
+                            "type": "leaf"
+                          },
+                          {
+                            "leaf-type": "string",
+                            "name": "deployment-scope",
+                            "ordered-by": "user",
+                            "path": "system/extensions/providers/license-type",
+                            "type": "leaf-list"
+                          }
+                        ],
+                        "key": "name",
+                        "name": "license-type",
+                        "ordered-by": "user",
+                        "path": "system/extensions/providers",
+                        "type": "list"
+                      }
+                    ],
+                    "key": "name",
+                    "name": "providers",
+                    "ordered-by": "user",
+                    "path": "system/extensions",
+                    "type": "list"
+                  }
+                ],
+                "name": "extensions",
+                "path": "system",
+                "type": "container"
+              }
+            ],
+            "name": "system",
+            "path": "",
+            "type": "container"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "leaf-type": "string",
+                    "lengths": [
+                      {
+                        "max": 64,
+                        "min": 2,
+                        "path": "vlans/vlan/name"
+                      }
+                    ],
+                    "name": "name",
+                    "path": "vlans/vlan",
+                    "type": "leaf"
+                  },
+                  {
+                    "leaf-type": "string",
+                    "name": "vlan-id",
+                    "path": "vlans/vlan",
+                    "type": "leaf"
+                  },
+                  {
+                    "leaf-type": "union",
+                    "name": "l3-interface",
+                    "path": "vlans/vlan",
+                    "type": "leaf",
+                    "types": [
+                      {
+                        "path": "vlans/vlan/l3-interface",
+                        "type": "string"
+                      },
+                      {
+                        "path": "vlans/vlan/l3-interface",
+                        "patterns": [
+                          "\u003c.*\u003e|$.*"
+                        ],
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "children": [
+                      {
+                        "leaf-type": "union",
+                        "name": "vni",
+                        "path": "vlans/vlan/vxlan",
+                        "type": "leaf",
+                        "types": [
+                          {
+                            "path": "vlans/vlan/vxlan/vni",
+                            "patterns": [
+                              "\u003c.*\u003e|$.*"
+                            ],
+                            "type": "string"
+                          },
+                          {
+                            "path": "vlans/vlan/vxlan/vni",
+                            "ranges": [
+                              {
+                                "max": 16777214,
+                                "min": 0,
+                                "path": "vlans/vlan/vxlan/vni"
+                              }
+                            ],
+                            "type": "uint32"
+                          }
+                        ]
+                      }
+                    ],
+                    "name": "vxlan",
+                    "path": "vlans/vlan",
+                    "type": "container"
+                  }
+                ],
+                "key": "name",
+                "name": "vlan",
+                "path": "vlans",
+                "type": "list"
+              }
+            ],
+            "name": "vlans",
+            "path": "",
+            "type": "container"
+          }
+        ],
+        "config": "true",
+        "name": "configuration",
+        "path": "",
+        "type": "container"
+      }
+    ],
+    "name": "root",
+    "path": "",
+    "type": "container"
+  }
+}`
 
 
 // Junos XML Hierarchy
@@ -7926,39 +10178,41 @@ func (r *resource_Apply_Groups) Read(ctx context.Context, req resource.ReadReque
 }
 
 
-
-
-
 // Update implements resource.Resource.
 func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	
 	var plan Groups_Model
+	var state Groups_Model
+
+	// Get plan and state
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	// Check for errors
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var config xml_Configuration
-	config.Groups.Name = plan.ResourceName.ValueStringPointer()
-    
 	
-    var var_chassis []Chassis_Model
-    if plan.Chassis.IsNull() {
-        var_chassis = []Chassis_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Chassis.ElementsAs(ctx, &var_chassis, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Chassis = make([]xml_Chassis, len(var_chassis))
+	BuildXMLConfig := func(plan Groups_Model)(config xml_Configuration){
+
+        config.Groups.Name = plan.ResourceName.ValueStringPointer()
     
-    for i_chassis, v_chassis := range var_chassis {
-        var var_chassis_aggregated_devices []Chassis_Aggregated_devices_Model
-        resp.Diagnostics.Append(v_chassis.Aggregated_devices.ElementsAs(ctx, &var_chassis_aggregated_devices, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		
+		var var_chassis []Chassis_Model
+		if plan.Chassis.IsNull() {
+			var_chassis = []Chassis_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Chassis.ElementsAs(ctx, &var_chassis, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Chassis = make([]xml_Chassis, len(var_chassis))
+		
+		for i_chassis, v_chassis := range var_chassis {
+			var var_chassis_aggregated_devices []Chassis_Aggregated_devices_Model
+			resp.Diagnostics.Append(v_chassis.Aggregated_devices.ElementsAs(ctx, &var_chassis_aggregated_devices, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Chassis[i_chassis].Aggregated_devices = make([]xml_Chassis_Aggregated_devices, len(var_chassis_aggregated_devices))
         
 		for i_chassis_aggregated_devices, v_chassis_aggregated_devices := range var_chassis_aggregated_devices {
@@ -7973,25 +10227,25 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
             config.Groups.Chassis[i_chassis].Aggregated_devices[i_chassis_aggregated_devices].Ethernet[i_chassis_aggregated_devices_ethernet].Device_count = v_chassis_aggregated_devices_ethernet.Device_count.ValueStringPointer()
         }
         }
-    }
-	
-    var var_forwarding_options []Forwarding_options_Model
-    if plan.Forwarding_options.IsNull() {
-        var_forwarding_options = []Forwarding_options_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Forwarding_options.ElementsAs(ctx, &var_forwarding_options, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Forwarding_options = make([]xml_Forwarding_options, len(var_forwarding_options))
-    
-    for i_forwarding_options, v_forwarding_options := range var_forwarding_options {
-        var var_forwarding_options_storm_control_profiles []Forwarding_options_Storm_control_profiles_Model
-        resp.Diagnostics.Append(v_forwarding_options.Storm_control_profiles.ElementsAs(ctx, &var_forwarding_options_storm_control_profiles, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_forwarding_options []Forwarding_options_Model
+		if plan.Forwarding_options.IsNull() {
+			var_forwarding_options = []Forwarding_options_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Forwarding_options.ElementsAs(ctx, &var_forwarding_options, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Forwarding_options = make([]xml_Forwarding_options, len(var_forwarding_options))
+		
+		for i_forwarding_options, v_forwarding_options := range var_forwarding_options {
+			var var_forwarding_options_storm_control_profiles []Forwarding_options_Storm_control_profiles_Model
+			resp.Diagnostics.Append(v_forwarding_options.Storm_control_profiles.ElementsAs(ctx, &var_forwarding_options_storm_control_profiles, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Forwarding_options[i_forwarding_options].Storm_control_profiles = make([]xml_Forwarding_options_Storm_control_profiles, len(var_forwarding_options_storm_control_profiles))
         
 		for i_forwarding_options_storm_control_profiles, v_forwarding_options_storm_control_profiles := range var_forwarding_options_storm_control_profiles {
@@ -8004,25 +10258,25 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
 	    config.Groups.Forwarding_options[i_forwarding_options].Storm_control_profiles[i_forwarding_options_storm_control_profiles].All = make([]xml_Forwarding_options_Storm_control_profiles_All, len(var_forwarding_options_storm_control_profiles_all))
         
         }
-    }
-	
-    var var_interfaces []Interfaces_Model
-    if plan.Interfaces.IsNull() {
-        var_interfaces = []Interfaces_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Interfaces.ElementsAs(ctx, &var_interfaces, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Interfaces = make([]xml_Interfaces, len(var_interfaces))
-    
-    for i_interfaces, v_interfaces := range var_interfaces {
-        var var_interfaces_interface []Interfaces_Interface_Model
-        resp.Diagnostics.Append(v_interfaces.Interface.ElementsAs(ctx, &var_interfaces_interface, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_interfaces []Interfaces_Model
+		if plan.Interfaces.IsNull() {
+			var_interfaces = []Interfaces_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Interfaces.ElementsAs(ctx, &var_interfaces, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Interfaces = make([]xml_Interfaces, len(var_interfaces))
+		
+		for i_interfaces, v_interfaces := range var_interfaces {
+			var var_interfaces_interface []Interfaces_Interface_Model
+			resp.Diagnostics.Append(v_interfaces.Interface.ElementsAs(ctx, &var_interfaces_interface, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Interfaces[i_interfaces].Interface = make([]xml_Interfaces_Interface, len(var_interfaces_interface))
         
 		for i_interfaces_interface, v_interfaces_interface := range var_interfaces_interface {
@@ -8145,25 +10399,25 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
             config.Groups.Interfaces[i_interfaces].Interface[i_interfaces_interface].Unit[i_interfaces_interface_unit].Mac = v_interfaces_interface_unit.Mac.ValueStringPointer()
         }
         }
-    }
-	
-    var var_policy_options []Policy_options_Model
-    if plan.Policy_options.IsNull() {
-        var_policy_options = []Policy_options_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Policy_options.ElementsAs(ctx, &var_policy_options, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Policy_options = make([]xml_Policy_options, len(var_policy_options))
-    
-    for i_policy_options, v_policy_options := range var_policy_options {
-        var var_policy_options_policy_statement []Policy_options_Policy_statement_Model
-        resp.Diagnostics.Append(v_policy_options.Policy_statement.ElementsAs(ctx, &var_policy_options_policy_statement, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_policy_options []Policy_options_Model
+		if plan.Policy_options.IsNull() {
+			var_policy_options = []Policy_options_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Policy_options.ElementsAs(ctx, &var_policy_options, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Policy_options = make([]xml_Policy_options, len(var_policy_options))
+		
+		for i_policy_options, v_policy_options := range var_policy_options {
+			var var_policy_options_policy_statement []Policy_options_Policy_statement_Model
+			resp.Diagnostics.Append(v_policy_options.Policy_statement.ElementsAs(ctx, &var_policy_options_policy_statement, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Policy_options[i_policy_options].Policy_statement = make([]xml_Policy_options_Policy_statement, len(var_policy_options_policy_statement))
         
 		for i_policy_options_policy_statement, v_policy_options_policy_statement := range var_policy_options_policy_statement {
@@ -8247,11 +10501,11 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
         }
         }
         }
-        var var_policy_options_community []Policy_options_Community_Model
-        resp.Diagnostics.Append(v_policy_options.Community.ElementsAs(ctx, &var_policy_options_community, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			var var_policy_options_community []Policy_options_Community_Model
+			resp.Diagnostics.Append(v_policy_options.Community.ElementsAs(ctx, &var_policy_options_community, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Policy_options[i_policy_options].Community = make([]xml_Policy_options_Community, len(var_policy_options_community))
         
 		for i_policy_options_community, v_policy_options_community := range var_policy_options_community {
@@ -8262,25 +10516,25 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
 				config.Groups.Policy_options[i_policy_options].Community[i_policy_options_community].Members = append(config.Groups.Policy_options[i_policy_options].Community[i_policy_options_community].Members, &v_policy_options_community_members)
 			}
         }
-    }
-	
-    var var_protocols []Protocols_Model
-    if plan.Protocols.IsNull() {
-        var_protocols = []Protocols_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Protocols.ElementsAs(ctx, &var_protocols, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Protocols = make([]xml_Protocols, len(var_protocols))
-    
-    for i_protocols, v_protocols := range var_protocols {
-        var var_protocols_bgp []Protocols_Bgp_Model
-        resp.Diagnostics.Append(v_protocols.Bgp.ElementsAs(ctx, &var_protocols_bgp, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_protocols []Protocols_Model
+		if plan.Protocols.IsNull() {
+			var_protocols = []Protocols_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Protocols.ElementsAs(ctx, &var_protocols, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Protocols = make([]xml_Protocols, len(var_protocols))
+		
+		for i_protocols, v_protocols := range var_protocols {
+			var var_protocols_bgp []Protocols_Bgp_Model
+			resp.Diagnostics.Append(v_protocols.Bgp.ElementsAs(ctx, &var_protocols_bgp, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Protocols[i_protocols].Bgp = make([]xml_Protocols_Bgp, len(var_protocols_bgp))
         
 		for i_protocols_bgp, v_protocols_bgp := range var_protocols_bgp {
@@ -8414,11 +10668,11 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
         }
         }
         }
-        var var_protocols_evpn []Protocols_Evpn_Model
-        resp.Diagnostics.Append(v_protocols.Evpn.ElementsAs(ctx, &var_protocols_evpn, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			var var_protocols_evpn []Protocols_Evpn_Model
+			resp.Diagnostics.Append(v_protocols.Evpn.ElementsAs(ctx, &var_protocols_evpn, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Protocols[i_protocols].Evpn = make([]xml_Protocols_Evpn, len(var_protocols_evpn))
         
 		for i_protocols_evpn, v_protocols_evpn := range var_protocols_evpn {
@@ -8432,11 +10686,11 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
 			}
             config.Groups.Protocols[i_protocols].Evpn[i_protocols_evpn].No_core_isolation = v_protocols_evpn.No_core_isolation.ValueStringPointer()
         }
-        var var_protocols_lldp []Protocols_Lldp_Model
-        resp.Diagnostics.Append(v_protocols.Lldp.ElementsAs(ctx, &var_protocols_lldp, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			var var_protocols_lldp []Protocols_Lldp_Model
+			resp.Diagnostics.Append(v_protocols.Lldp.ElementsAs(ctx, &var_protocols_lldp, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Protocols[i_protocols].Lldp = make([]xml_Protocols_Lldp, len(var_protocols_lldp))
         
 		for i_protocols_lldp, v_protocols_lldp := range var_protocols_lldp {
@@ -8451,11 +10705,11 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
             config.Groups.Protocols[i_protocols].Lldp[i_protocols_lldp].Interface[i_protocols_lldp_interface].Name = v_protocols_lldp_interface.Name.ValueStringPointer()
         }
         }
-        var var_protocols_igmp_snooping []Protocols_Igmp_snooping_Model
-        resp.Diagnostics.Append(v_protocols.Igmp_snooping.ElementsAs(ctx, &var_protocols_igmp_snooping, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			var var_protocols_igmp_snooping []Protocols_Igmp_snooping_Model
+			resp.Diagnostics.Append(v_protocols.Igmp_snooping.ElementsAs(ctx, &var_protocols_igmp_snooping, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Protocols[i_protocols].Igmp_snooping = make([]xml_Protocols_Igmp_snooping, len(var_protocols_igmp_snooping))
         
 		for i_protocols_igmp_snooping, v_protocols_igmp_snooping := range var_protocols_igmp_snooping {
@@ -8470,25 +10724,25 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
             config.Groups.Protocols[i_protocols].Igmp_snooping[i_protocols_igmp_snooping].Vlan[i_protocols_igmp_snooping_vlan].Name = v_protocols_igmp_snooping_vlan.Name.ValueStringPointer()
         }
         }
-    }
-	
-    var var_routing_instances []Routing_instances_Model
-    if plan.Routing_instances.IsNull() {
-        var_routing_instances = []Routing_instances_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Routing_instances.ElementsAs(ctx, &var_routing_instances, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Routing_instances = make([]xml_Routing_instances, len(var_routing_instances))
-    
-    for i_routing_instances, v_routing_instances := range var_routing_instances {
-        var var_routing_instances_instance []Routing_instances_Instance_Model
-        resp.Diagnostics.Append(v_routing_instances.Instance.ElementsAs(ctx, &var_routing_instances_instance, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_routing_instances []Routing_instances_Model
+		if plan.Routing_instances.IsNull() {
+			var_routing_instances = []Routing_instances_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Routing_instances.ElementsAs(ctx, &var_routing_instances, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Routing_instances = make([]xml_Routing_instances, len(var_routing_instances))
+		
+		for i_routing_instances, v_routing_instances := range var_routing_instances {
+			var var_routing_instances_instance []Routing_instances_Instance_Model
+			resp.Diagnostics.Append(v_routing_instances.Instance.ElementsAs(ctx, &var_routing_instances_instance, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Routing_instances[i_routing_instances].Instance = make([]xml_Routing_instances_Instance, len(var_routing_instances_instance))
         
 		for i_routing_instances_instance, v_routing_instances_instance := range var_routing_instances_instance {
@@ -8618,25 +10872,25 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
         }
         }
         }
-    }
-	
-    var var_routing_options []Routing_options_Model
-    if plan.Routing_options.IsNull() {
-        var_routing_options = []Routing_options_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Routing_options.ElementsAs(ctx, &var_routing_options, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Routing_options = make([]xml_Routing_options, len(var_routing_options))
-    
-    for i_routing_options, v_routing_options := range var_routing_options {
-        var var_routing_options_static []Routing_options_Static_Model
-        resp.Diagnostics.Append(v_routing_options.Static.ElementsAs(ctx, &var_routing_options_static, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_routing_options []Routing_options_Model
+		if plan.Routing_options.IsNull() {
+			var_routing_options = []Routing_options_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Routing_options.ElementsAs(ctx, &var_routing_options, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Routing_options = make([]xml_Routing_options, len(var_routing_options))
+		
+		for i_routing_options, v_routing_options := range var_routing_options {
+			var var_routing_options_static []Routing_options_Static_Model
+			resp.Diagnostics.Append(v_routing_options.Static.ElementsAs(ctx, &var_routing_options_static, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Routing_options[i_routing_options].Static = make([]xml_Routing_options_Static, len(var_routing_options_static))
         
 		for i_routing_options_static, v_routing_options_static := range var_routing_options_static {
@@ -8656,12 +10910,12 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
 			}
         }
         }
-        config.Groups.Routing_options[i_routing_options].Router_id = v_routing_options.Router_id.ValueStringPointer()
-        var var_routing_options_forwarding_table []Routing_options_Forwarding_table_Model
-        resp.Diagnostics.Append(v_routing_options.Forwarding_table.ElementsAs(ctx, &var_routing_options_forwarding_table, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			config.Groups.Routing_options[i_routing_options].Router_id = v_routing_options.Router_id.ValueStringPointer()
+			var var_routing_options_forwarding_table []Routing_options_Forwarding_table_Model
+			resp.Diagnostics.Append(v_routing_options.Forwarding_table.ElementsAs(ctx, &var_routing_options_forwarding_table, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Routing_options[i_routing_options].Forwarding_table = make([]xml_Routing_options_Forwarding_table, len(var_routing_options_forwarding_table))
         
 		for i_routing_options_forwarding_table, v_routing_options_forwarding_table := range var_routing_options_forwarding_table {
@@ -8691,72 +10945,72 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
         }
         }
         }
-    }
-	
-    var var_snmp []Snmp_Model
-    if plan.Snmp.IsNull() {
-        var_snmp = []Snmp_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Snmp.ElementsAs(ctx, &var_snmp, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Snmp = make([]xml_Snmp, len(var_snmp))
-    
-    for i_snmp, v_snmp := range var_snmp {
-        config.Groups.Snmp[i_snmp].Location = v_snmp.Location.ValueStringPointer()
-        config.Groups.Snmp[i_snmp].Contact = v_snmp.Contact.ValueStringPointer()
-        var var_snmp_community []Snmp_Community_Model
-        resp.Diagnostics.Append(v_snmp.Community.ElementsAs(ctx, &var_snmp_community, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_snmp []Snmp_Model
+		if plan.Snmp.IsNull() {
+			var_snmp = []Snmp_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Snmp.ElementsAs(ctx, &var_snmp, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Snmp = make([]xml_Snmp, len(var_snmp))
+		
+		for i_snmp, v_snmp := range var_snmp {
+			config.Groups.Snmp[i_snmp].Location = v_snmp.Location.ValueStringPointer()
+			config.Groups.Snmp[i_snmp].Contact = v_snmp.Contact.ValueStringPointer()
+			var var_snmp_community []Snmp_Community_Model
+			resp.Diagnostics.Append(v_snmp.Community.ElementsAs(ctx, &var_snmp_community, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Snmp[i_snmp].Community = make([]xml_Snmp_Community, len(var_snmp_community))
         
 		for i_snmp_community, v_snmp_community := range var_snmp_community {
             config.Groups.Snmp[i_snmp].Community[i_snmp_community].Name = v_snmp_community.Name.ValueStringPointer()
             config.Groups.Snmp[i_snmp].Community[i_snmp_community].Authorization = v_snmp_community.Authorization.ValueStringPointer()
         }
-    }
-	
-    var var_switch_options []Switch_options_Model
-    if plan.Switch_options.IsNull() {
-        var_switch_options = []Switch_options_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Switch_options.ElementsAs(ctx, &var_switch_options, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Switch_options = make([]xml_Switch_options, len(var_switch_options))
-    
-    for i_switch_options, v_switch_options := range var_switch_options {
-        var var_switch_options_vtep_source_interface []Switch_options_Vtep_source_interface_Model
-        resp.Diagnostics.Append(v_switch_options.Vtep_source_interface.ElementsAs(ctx, &var_switch_options_vtep_source_interface, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_switch_options []Switch_options_Model
+		if plan.Switch_options.IsNull() {
+			var_switch_options = []Switch_options_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Switch_options.ElementsAs(ctx, &var_switch_options, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Switch_options = make([]xml_Switch_options, len(var_switch_options))
+		
+		for i_switch_options, v_switch_options := range var_switch_options {
+			var var_switch_options_vtep_source_interface []Switch_options_Vtep_source_interface_Model
+			resp.Diagnostics.Append(v_switch_options.Vtep_source_interface.ElementsAs(ctx, &var_switch_options_vtep_source_interface, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Switch_options[i_switch_options].Vtep_source_interface = make([]xml_Switch_options_Vtep_source_interface, len(var_switch_options_vtep_source_interface))
         
 		for i_switch_options_vtep_source_interface, v_switch_options_vtep_source_interface := range var_switch_options_vtep_source_interface {
             config.Groups.Switch_options[i_switch_options].Vtep_source_interface[i_switch_options_vtep_source_interface].Interface_name = v_switch_options_vtep_source_interface.Interface_name.ValueStringPointer()
         }
-        var var_switch_options_route_distinguisher []Switch_options_Route_distinguisher_Model
-        resp.Diagnostics.Append(v_switch_options.Route_distinguisher.ElementsAs(ctx, &var_switch_options_route_distinguisher, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			var var_switch_options_route_distinguisher []Switch_options_Route_distinguisher_Model
+			resp.Diagnostics.Append(v_switch_options.Route_distinguisher.ElementsAs(ctx, &var_switch_options_route_distinguisher, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Switch_options[i_switch_options].Route_distinguisher = make([]xml_Switch_options_Route_distinguisher, len(var_switch_options_route_distinguisher))
         
 		for i_switch_options_route_distinguisher, v_switch_options_route_distinguisher := range var_switch_options_route_distinguisher {
             config.Groups.Switch_options[i_switch_options].Route_distinguisher[i_switch_options_route_distinguisher].Rd_type = v_switch_options_route_distinguisher.Rd_type.ValueStringPointer()
         }
-        var var_switch_options_vrf_target []Switch_options_Vrf_target_Model
-        resp.Diagnostics.Append(v_switch_options.Vrf_target.ElementsAs(ctx, &var_switch_options_vrf_target, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			var var_switch_options_vrf_target []Switch_options_Vrf_target_Model
+			resp.Diagnostics.Append(v_switch_options.Vrf_target.ElementsAs(ctx, &var_switch_options_vrf_target, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Switch_options[i_switch_options].Vrf_target = make([]xml_Switch_options_Vrf_target, len(var_switch_options_vrf_target))
         
 		for i_switch_options_vrf_target, v_switch_options_vrf_target := range var_switch_options_vrf_target {
@@ -8769,25 +11023,25 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
 	    config.Groups.Switch_options[i_switch_options].Vrf_target[i_switch_options_vrf_target].Auto = make([]xml_Switch_options_Vrf_target_Auto, len(var_switch_options_vrf_target_auto))
         
         }
-    }
-	
-    var var_system []System_Model
-    if plan.System.IsNull() {
-        var_system = []System_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.System.ElementsAs(ctx, &var_system, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.System = make([]xml_System, len(var_system))
-    
-    for i_system, v_system := range var_system {
-        var var_system_login []System_Login_Model
-        resp.Diagnostics.Append(v_system.Login.ElementsAs(ctx, &var_system_login, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_system []System_Model
+		if plan.System.IsNull() {
+			var_system = []System_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.System.ElementsAs(ctx, &var_system, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.System = make([]xml_System, len(var_system))
+		
+		for i_system, v_system := range var_system {
+			var var_system_login []System_Login_Model
+			resp.Diagnostics.Append(v_system.Login.ElementsAs(ctx, &var_system_login, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.System[i_system].Login = make([]xml_System_Login, len(var_system_login))
         
 		for i_system_login, v_system_login := range var_system_login {
@@ -8815,22 +11069,22 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
         }
             config.Groups.System[i_system].Login[i_system_login].Message = v_system_login.Message.ValueStringPointer()
         }
-        var var_system_root_authentication []System_Root_authentication_Model
-        resp.Diagnostics.Append(v_system.Root_authentication.ElementsAs(ctx, &var_system_root_authentication, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			var var_system_root_authentication []System_Root_authentication_Model
+			resp.Diagnostics.Append(v_system.Root_authentication.ElementsAs(ctx, &var_system_root_authentication, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.System[i_system].Root_authentication = make([]xml_System_Root_authentication, len(var_system_root_authentication))
         
 		for i_system_root_authentication, v_system_root_authentication := range var_system_root_authentication {
             config.Groups.System[i_system].Root_authentication[i_system_root_authentication].Encrypted_password = v_system_root_authentication.Encrypted_password.ValueStringPointer()
         }
-        config.Groups.System[i_system].Host_name = v_system.Host_name.ValueStringPointer()
-        var var_system_services []System_Services_Model
-        resp.Diagnostics.Append(v_system.Services.ElementsAs(ctx, &var_system_services, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			config.Groups.System[i_system].Host_name = v_system.Host_name.ValueStringPointer()
+			var var_system_services []System_Services_Model
+			resp.Diagnostics.Append(v_system.Services.ElementsAs(ctx, &var_system_services, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.System[i_system].Services = make([]xml_System_Services, len(var_system_services))
         
 		for i_system_services, v_system_services := range var_system_services {
@@ -8932,11 +11186,11 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
             config.Groups.System[i_system].Services[i_system_services].Rest[i_system_services_rest].Enable_explorer = v_system_services_rest.Enable_explorer.ValueStringPointer()
         }
         }
-        var var_system_syslog []System_Syslog_Model
-        resp.Diagnostics.Append(v_system.Syslog.ElementsAs(ctx, &var_system_syslog, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			var var_system_syslog []System_Syslog_Model
+			resp.Diagnostics.Append(v_system.Syslog.ElementsAs(ctx, &var_system_syslog, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.System[i_system].Syslog = make([]xml_System_Syslog, len(var_system_syslog))
         
 		for i_system_syslog, v_system_syslog := range var_system_syslog {
@@ -8985,11 +11239,11 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
         }
         }
         }
-        var var_system_extensions []System_Extensions_Model
-        resp.Diagnostics.Append(v_system.Extensions.ElementsAs(ctx, &var_system_extensions, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+			var var_system_extensions []System_Extensions_Model
+			resp.Diagnostics.Append(v_system.Extensions.ElementsAs(ctx, &var_system_extensions, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.System[i_system].Extensions = make([]xml_System_Extensions, len(var_system_extensions))
         
 		for i_system_extensions, v_system_extensions := range var_system_extensions {
@@ -9019,25 +11273,25 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
         }
         }
         }
-    }
-	
-    var var_vlans []Vlans_Model
-    if plan.Vlans.IsNull() {
-        var_vlans = []Vlans_Model{}
-    }else {
-        resp.Diagnostics.Append(plan.Vlans.ElementsAs(ctx, &var_vlans, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
-    }
-    config.Groups.Vlans = make([]xml_Vlans, len(var_vlans))
-    
-    for i_vlans, v_vlans := range var_vlans {
-        var var_vlans_vlan []Vlans_Vlan_Model
-        resp.Diagnostics.Append(v_vlans.Vlan.ElementsAs(ctx, &var_vlans_vlan, false)...)
-        if resp.Diagnostics.HasError() {
-            return
-        }
+		}
+		
+		var var_vlans []Vlans_Model
+		if plan.Vlans.IsNull() {
+			var_vlans = []Vlans_Model{}
+		}else {
+			resp.Diagnostics.Append(plan.Vlans.ElementsAs(ctx, &var_vlans, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		config.Groups.Vlans = make([]xml_Vlans, len(var_vlans))
+		
+		for i_vlans, v_vlans := range var_vlans {
+			var var_vlans_vlan []Vlans_Vlan_Model
+			resp.Diagnostics.Append(v_vlans.Vlan.ElementsAs(ctx, &var_vlans_vlan, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 	    config.Groups.Vlans[i_vlans].Vlan = make([]xml_Vlans_Vlan, len(var_vlans_vlan))
         
 		for i_vlans_vlan, v_vlans_vlan := range var_vlans_vlan {
@@ -9055,10 +11309,70 @@ func (r *resource_Apply_Groups) Update(ctx context.Context, req resource.UpdateR
             config.Groups.Vlans[i_vlans].Vlan[i_vlans_vlan].Vxlan[i_vlans_vlan_vxlan].Vni = v_vlans_vlan_vxlan.Vni.ValueStringPointer()
         }
         }
+		}
+		
+		return config
     }
-	
-	err := r.client.SendTransaction(plan.ResourceName.ValueString(), config, false)
+
+	// Build configs
+	var plan_config xml_Configuration
+	plan_config = BuildXMLConfig(plan)
+	if plan_config.Groups.Name == nil || *plan_config.Groups.Name == "" {
+		return
+	}
+	var state_config xml_Configuration
+	state_config = BuildXMLConfig(state)
+	if state_config.Groups.Name == nil || *state_config.Groups.Name == "" {
+		return
+	}
+
+    // Get XML bytes from typed config 
+    marshalConfig := func(c xml_Configuration) ([]byte, error) {
+        var buf bytes.Buffer
+        buf.WriteString(xml.Header)
+        enc := xml.NewEncoder(&buf)
+        enc.Indent("", "  ")
+        if err := enc.Encode(c); err != nil {
+            return nil, err
+        }
+        if err := enc.Flush(); err != nil {
+            return nil, err
+        }
+        return buf.Bytes(), nil
+    }
+
+    // Marshal to XML bytes
+    planXML, err := marshalConfig(plan_config)
+    stateXML, err := marshalConfig(state_config)
+
+    // Build trees
+    planTree, err := patch.BuildTree(planXML)
+    stateTree, err := patch.BuildTree(stateXML)
+
+    // Create leaf maps
+    planMap := patch.LeafMap(planTree)
+    stateMap := patch.LeafMap(stateTree)
+
+    resp.Diagnostics.AddWarning("Plan", fmt.Sprintf("Plan: %+v", planMap))
+
+    // Parse Trimmed Schema to type map
+    idx, err := patch.UnmarshalTrimmedSchemaIndex(TrimmedSchemaJSON)
 	if err != nil {
+		resp.Diagnostics.AddError("Failed while parsing trimmed schema", err.Error())
+		return
+	}
+
+	resp.Diagnostics.AddWarning("Parsing successful", fmt.Sprintf("Total indexed paths: %d", len(idx)))
+
+    changes := patch.CreateDiffMap(planMap, stateMap, idx)
+
+    name := plan.ResourceName.ValueString()
+
+    diff, err := patch.CreateDiffPatch(changes, name)
+
+	err = r.client.SendUpdate(plan.ResourceName.ValueString(), diff, false)
+	resp.Diagnostics.AddWarning("Diff", fmt.Sprintf("Diff: %s", diff)) 
+    if err != nil {
 		resp.Diagnostics.AddError("Failed while Sending", err.Error())
 		return
 	}

@@ -262,6 +262,46 @@ func sortApplyGroupsList() {
 	applyGroupsList = filteredGroups
 }
 
+// SendUpdate is a method that applies an xml patch
+func (g *GoNCClient) SendUpdate(id string, diff string, commit bool) error {
+	g.Lock.Lock()
+	defer g.Lock.Unlock()
+
+	if err := g.Driver.Dial(); err != nil {
+		return err
+	}
+
+	// Extract the string between <name> tags
+	nameStart := strings.Index(diff, "<name>")
+	nameEnd := strings.Index(diff, "</name>")
+	if nameStart == -1 || nameEnd == -1 {
+		return fmt.Errorf("failed to extract the group name from the netconfcall")
+	}
+	groupName := diff[nameStart+6 : nameEnd]
+
+	// Add the groupName to the applyGroupsList
+	addToApplyGroupsList(groupName)
+
+	groupString := fmt.Sprintf(groupStrXML, diff)
+
+	_, err := g.Driver.SendRaw(groupString)
+	if err != nil {
+		errInternal := g.Driver.Close()
+		return fmt.Errorf("driver error: %+v, driver close error: %s", err, errInternal)
+	}
+	if commit {
+		if _, err = g.Driver.SendRaw(commitStr); err != nil {
+			errInternal := g.Driver.Close()
+			return fmt.Errorf("driver error: %+v, driver close error: %s", err, errInternal)
+		}
+	}
+
+	if err := g.Driver.Close(); err != nil {
+		return fmt.Errorf("driver close error: %s", err)
+	}
+	return nil
+}
+
 // sendRawConfig is a wrapper for driver.SendRaw()
 func (g *GoNCClient) sendRawConfig(netconfCall string, commit bool) (string, error) {
 	g.Lock.Lock()
