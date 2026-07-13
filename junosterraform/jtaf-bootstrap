@@ -1,0 +1,206 @@
+#!/usr/bin/env python3
+"""Bootstrap tool that generates both Ansible and Terraform artifacts from device config or XML files.
+
+Orchestrates existing JTAF tools (pyang, jtaf-ansible, jtaf-provider, jtaf-xml2yaml)
+to produce a complete automation setup from a single command.
+"""
+
+import argparse
+import os
+import subprocess
+import sys
+import tempfile
+from importlib.resources import files, as_file
+
+
+def get_config_from_device(host, user, password, port=830):
+    """SSH to device via ncclient and retrieve full configuration XML."""
+    try:
+        from ncclient import manager
+    except ImportError:
+        print("Error: ncclient is required for device download. Install with: pip install ncclient", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Connecting to {host}:{port} as {user}...")
+    with manager.connect(
+        host=host,
+        port=port,
+        username=user,
+        password=password,
+        hostkey_verify=False,
+        device_params={'name': 'junos'},
+    ) as m:
+        config = m.get_config(source='running')
+        # Extract the <configuration> element
+        config_xml = config.data_xml
+        print(f"Retrieved configuration from {host} ({len(config_xml)} bytes)")
+        return config_xml
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Bootstrap both Ansible and Terraform artifacts from device config or XML files.',
+    )
+
+    # Input source (mutually exclusive: device or XML files)
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument(
+        '--host',
+        help='Device IP/hostname to SSH and download config via NETCONF get-config.',
+    )
+    input_group.add_argument(
+        '--xml', '-x',
+        nargs='+',
+        help='One or more XML configuration files to use as input.',
+    )
+
+    # Device credentials (only used with --host)
+    parser.add_argument('--user', '-u', default='root', help='NETCONF username (default: root).')
+    parser.add_argument('--password', '-p', default='', help='NETCONF password.')
+    parser.add_argument('--port', type=int, default=830, help='NETCONF port (default: 830).')
+
+    # YANG model paths
+    parser.add_argument(
+        '--yang-path', '-y',
+        nargs='+',
+        required=True,
+        help='YANG search paths and/or .yang files passed to pyang.',
+    )
+
+    # Output options
+    parser.add_argument('-t', '--type', required=True, help='Device type suffix for output directories.')
+    parser.add_argument('--mode', choices=['group', 'override'], default='group',
+                        help='Ansible operating mode: "group" (default) or "override".')
+    parser.add_argument('-d', '--directory', default=None,
+                        help='Output directory for host_vars/group_vars (default: ansible-deploy-<type>).')
+    parser.add_argument('--grouping-hosts-file', default=None,
+                        help='Grouping hosts file for jtaf-xml2yaml inventory generation.')
+
+    args = parser.parse_args()
+
+    # Resolve output directory
+    deploy_dir = args.directory or f"ansible-deploy-{args.type}"
+
+    # Step 1: Get XML config (from device or files)
+    if args.host:
+        config_xml = get_config_from_device(args.host, args.user, args.password, args.port)
+        # Save to temp file
+        tmp_xml = tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False, prefix=f'jtaf-bootstrap-{args.type}-')
+        tmp_xml.write(config_xml)
+        tmp_xml.close()
+        xml_files = [tmp_xml.name]
+        print(f"Saved device config to {tmp_xml.name}")
+    else:
+        xml_files = args.xml
+
+    # Separate YANG search paths and .yang files
+    search_paths = []
+    yang_files = []
+    for path in args.yang_path:
+        if os.path.isdir(path):
+            search_paths.append(path)
+        elif path.endswith('.yang'):
+            yang_files.append(path)
+        else:
+            print(f"Warning: {path} is not a directory or .yang file, skipping.", file=sys.stderr)
+
+    # Step 2: Run pyang to generate JSON schema
+    with as_file(files('jtaf_pyang_plugin').joinpath('__init__.py')) as init_py:
+        plugin_dir = os.path.dirname(init_py)
+
+    pyang_args = [
+        'pyang',
+        '--plugindir', plugin_dir,
+        '-f', 'jtaf',
+        '-p', ':'.join(search_paths),
+    ] + yang_files
+
+    print("Running pyang to generate JSON schema...")
+    p_pyang = subprocess.Popen(pyang_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    pyang_out, pyang_err = p_pyang.communicate()
+
+    if p_pyang.returncode != 0 or not pyang_out:
+        print("Error: pyang failed or produced no output.", file=sys.stderr)
+        if pyang_err:
+            print(pyang_err.decode(), file=sys.stderr)
+        sys.exit(1)
+
+    print(f"pyang produced {len(pyang_out)} bytes of JSON schema.")
+
+    # Step 3: Run jtaf-ansible to generate Ansible role
+    print(f"Generating Ansible role (mode={args.mode})...")
+    p_ansible = subprocess.Popen(
+        ['jtaf-ansible', '-j', '-', '-x', *xml_files, '-t', args.type, '--mode', args.mode],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    )
+    ansible_out, ansible_err = p_ansible.communicate(input=pyang_out)
+    if ansible_out:
+        print(ansible_out.decode())
+    if ansible_err:
+        print(ansible_err.decode(), file=sys.stderr)
+    if p_ansible.returncode != 0:
+        print("Warning: jtaf-ansible returned non-zero exit code.", file=sys.stderr)
+
+    # Step 4: Run jtaf-provider to generate Terraform provider
+    print("Generating Terraform provider...")
+    p_terraform = subprocess.Popen(
+        ['jtaf-provider', '-j', '-', '-x', *xml_files, '-t', args.type],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    )
+    tf_out, tf_err = p_terraform.communicate(input=pyang_out)
+    if tf_out:
+        print(tf_out.decode())
+    if tf_err:
+        print(tf_err.decode(), file=sys.stderr)
+    if p_terraform.returncode != 0:
+        print("Warning: jtaf-provider returned non-zero exit code.", file=sys.stderr)
+
+    # Step 5: Run jtaf-xml2yaml to generate host_vars/group_vars
+    ansible_provider_dir = f"ansible-provider-junos-{args.type}"
+    trimmed_schema = os.path.join(ansible_provider_dir, "trimmed_schema.json")
+
+    if os.path.exists(trimmed_schema) and args.grouping_hosts_file:
+        print(f"Generating host_vars/group_vars into {deploy_dir}...")
+        xml2yaml_cmd = [
+            'jtaf-xml2yaml',
+            '-j', trimmed_schema,
+            '-x', *xml_files,
+            '-d', deploy_dir,
+            '--grouping-hosts-file', args.grouping_hosts_file,
+        ]
+        p_yaml = subprocess.Popen(xml2yaml_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        yaml_out, yaml_err = p_yaml.communicate()
+        if yaml_out:
+            print(yaml_out.decode())
+        if yaml_err:
+            print(yaml_err.decode(), file=sys.stderr)
+    elif not args.grouping_hosts_file:
+        print("Skipping jtaf-xml2yaml: --grouping-hosts-file not provided.")
+    else:
+        print(f"Skipping jtaf-xml2yaml: {trimmed_schema} not found.")
+
+    # Summary
+    print("\n" + "=" * 60)
+    print("Bootstrap complete!")
+    print("=" * 60)
+    print(f"\nAnsible role:      {ansible_provider_dir}/")
+    tf_provider_dir = f"terraform-provider-junos-{args.type}"
+    if os.path.isdir(tf_provider_dir):
+        print(f"Terraform provider: {tf_provider_dir}/")
+    if os.path.isdir(deploy_dir):
+        print(f"Ansible deploy:    {deploy_dir}/")
+    print(f"\nMode: {args.mode}")
+    if args.mode == 'override':
+        print("  → Template renders bare <configuration> (no groups)")
+        print("  → Playbook uses load override + commit confirmed")
+    else:
+        print("  → Template wraps in <groups>JTAF_ANSIBLE</groups>")
+        print("  → Playbook uses load replace")
+
+    # Cleanup temp file if created
+    if args.host and os.path.exists(tmp_xml.name):
+        os.unlink(tmp_xml.name)
+
+
+if __name__ == "__main__":
+    main()

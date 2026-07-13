@@ -54,5 +54,6 @@ JTAF supports two output modes from the same YANG models and XML configurations:
 |----------|--------|-------|
 | **Terraform Provider** | Custom Go Terraform provider with NETCONF patch engine | [Junos Terraform Guide](README-terraform.md) |
 | **Ansible Role** | Ansible role + playbook with Jinja2 templates | [Junos Ansible Guide](README-ansible.md) |
+| **Bootstrap (both)** | Generates Ansible role + Terraform provider in one step | [Bootstrap Tool](README-ansible.md#bootstrap-tool-jtaf-bootstrap) |
 
 Both workflows start from the same YANG → JSON conversion above, then diverge into their respective toolchains.

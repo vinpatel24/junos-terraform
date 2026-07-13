@@ -132,6 +132,70 @@ At render time, Ansible merges these layers (host > group > all), so the templat
 
 ---
 
+## Override Mode (`load override`)
+
+JTAF supports two operating modes controlled by the `jtaf_mode` variable:
+
+| Mode | Behavior | Use When |
+|------|----------|----------|
+| `group` (default) | Wraps config in `<groups>JTAF_ANSIBLE</groups>`, pushes with `load replace` | You manage a subset of the device config alongside other config |
+| `override` | Renders bare `<configuration>`, pushes with `load override` + `commit confirmed` | You own the entire device config — what you provide IS the box |
+
+To enable override mode, set `jtaf_mode: "override"` in your role defaults, `group_vars`, or `host_vars`. You can also pass `--mode override` when generating the role with `jtaf-ansible` or `jtaf-yang2ansible`.
+
+### Important Notes
+
+**Override mode deletes all unmanaged config.** When using `load override`, the rendered XML replaces the *entire* device configuration. Your rendered XML **must** include:
+- Management interface IP address (e.g., `fxp0` or `em0`)
+- Root authentication (`system/root-authentication`)
+- NETCONF SSH service (`system/services/netconf/ssh`)
+
+If any of these are missing from the rendered template, the device may become unreachable after commit — at which point the `commit confirmed` timer will auto-rollback.
+
+**Large schemas may increase generation time.** If using full-model parse (all YANG files without XML filtering), the trimmed schema and generated Jinja2 template will be larger. This affects only the one-time `jtaf-ansible` / `jtaf-xml2yaml` generation step, not playbook runtime. Template rendering remains fast because Jinja2 `{% if ... is defined %}` conditionals skip undefined paths.
+
+**Set the commit confirmed timer appropriately.** Override mode uses `commit confirmed` as a safety net — if the device becomes unreachable after the override, Junos auto-rolls back when the timer expires. Configure `jtaf_commit_confirm_minutes` (default: 2) based on your expected commit time. For large configurations, consider 5 minutes.
+
+**NETCONF access is required.** The `juniper.device.config` module connects to devices via NETCONF (port 830). Ensure NETCONF SSH is enabled on target devices before running the playbook. If bootstrapping a new device, use the `jtaf-bootstrap` tool which can SSH to the device, download config via `get-config`, and generate both Ansible and Terraform artifacts.
+
+**Backward compatibility.** Group mode remains the default. No existing behavior changes unless you explicitly set `--mode override` or `jtaf_mode: "override"`. Existing roles and playbooks continue to work as before.
+
+---
+
+## Bootstrap Tool (`jtaf-bootstrap`)
+
+Generate both Ansible and Terraform artifacts in a single command from a live device or XML config files.
+
+### From XML files:
+```bash
+jtaf-bootstrap \
+  --xml dc1-leaf1.xml dc1-spine1.xml \
+  --yang-path examples/yang/18.2/18.2R3/common examples/yang/18.2/18.2R3/junos-qfx/conf/*.yang \
+  -t vqfx \
+  --mode override \
+  --grouping-hosts-file grouping.hosts \
+  -d ansible-deploy
+```
+
+### From a live device:
+```bash
+jtaf-bootstrap \
+  --host 10.0.0.1 --user root --password pass \
+  --yang-path examples/yang/18.2/18.2R3/common examples/yang/18.2/18.2R3/junos-qfx/conf/*.yang \
+  -t vqfx \
+  --mode override \
+  --grouping-hosts-file grouping.hosts
+```
+
+### What it produces:
+- `ansible-provider-junos-<type>/` — Ansible role with template + tasks
+- `terraform-provider-junos-<type>/` — Go Terraform provider source
+- `ansible-deploy-<type>/` (or `-d` dir) — host_vars, group_vars, inventory
+
+The `--mode` flag controls the generated Ansible template and playbook pattern (group or override).
+
+---
+
 ## Beginner Guide: Apply a generated role from a separate playbook directory
 
 This walkthrough is for first-time Ansible users and reflects the recommended split layout:
