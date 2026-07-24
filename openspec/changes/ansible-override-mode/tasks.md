@@ -18,27 +18,13 @@
 - [x] 3.3 Add commit confirmation task (second `juniper.device.config` call with `check: true, commit: false`) for override mode
 - [x] 3.4 Add `jtaf_commit_confirm_minutes` variable (default: 2) to generated role defaults
 
-## 4. Bootstrap Tool (jtaf-bootstrap)
-
-- [x] 4.1 Create `junosterraform/jtaf-bootstrap` CLI script with argparse: `--host`, `--user`, `--password`, `--xml`, `--yang-path` / `-p`, `-t`, `--mode`, `--grouping-hosts-file`, `-d` flags
-- [x] 4.2 Implement device config download path: SSH via ncclient `get-config`, save XML to temp file
-- [x] 4.3 Implement XML file input path: accept one or more `--xml` files (same as existing `-x` flow)
-- [x] 4.4 Orchestrate pyang → jtaf-ansible pipeline (reuse existing subprocess pattern from jtaf-yang2ansible)
-- [x] 4.5 Orchestrate pyang → jtaf-provider pipeline (reuse existing subprocess pattern from jtaf-yang2go)
-- [x] 4.6 Run jtaf-xml2yaml to generate host_vars/group_vars from the XML configs
-- [x] 4.7 Add `jtaf-bootstrap` entry point to `setup.py` scripts list
-- [x] 4.8 Add basic integration test: run jtaf-bootstrap with example XML files, verify both Ansible and Terraform output directories are created
-
-## 5. Documentation
+## 4. Documentation
 
 - [x] 5.1 Update `README-ansible.md` — add Override Mode section explaining the two modes, the flag, and the commit confirmed pattern
-- [x] 5.2 Update `README-ansible.md` — add Bootstrap Tool section with usage examples for `jtaf-bootstrap`
 - [x] 5.3 Add override mode example to `examples/ansible/` with a sample `site.yml` showing the override + commit confirmed flow
-- [x] 5.4 Update `README.md` main README — add `jtaf-bootstrap` to the workflow table
+- [x] 5.4 Update `README.md` main README
 
-## 6. Testing
+## 5. Testing
 
-- [x] 6.1 Add Python unit tests for `jtaf-ansible` with `--mode override`: verify generated template, playbook, and role defaults
-- [x] 6.2 Add Python unit tests for `jtaf-ansible` with `--mode group`: verify backward compatibility (identical to current output)
-- [x] 6.3 Add Python unit tests for `jtaf-bootstrap`: verify orchestration calls correct subtools with correct arguments
-- [x] 6.4 Manual integration test: generate override-mode role from example YANG + XML, run against mock or lab device, verify commit confirmed flow
+- [x] 5.1 Add Python unit tests for `jtaf-ansible` with `--mode override`: verify generated template, playbook, and role defaults
+- [x] 5.2 Add Python unit tests for `jtaf-ansible` with `--mode group`: verify backward compatibility (identical to current output)

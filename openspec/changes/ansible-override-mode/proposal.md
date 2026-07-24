@@ -1,13 +1,12 @@
 ## Why
 
-The JTAF Ansible workflow currently wraps all generated configuration inside a Junos `<groups><name>JTAF_ANSIBLE</name>...</groups>` block and pushes it with `load replace`. This limits Ansible to partial device management — the operator can only control config within the JTAF group while other config coexists untouched. Many operators want full ownership of the device configuration through Ansible, where what they provide IS the entire box config. Additionally, there is no `commit confirmed` safety mechanism, no bootstrap tool to onboard existing devices, and no way for operators to continuously edit YAML vars and have changes flow back into the Ansible role and playbook automatically.
+The JTAF Ansible workflow currently wraps all generated configuration inside a Junos `<groups><name>JTAF_ANSIBLE</name>...</groups>` block and pushes it with `load replace`. This limits Ansible to partial device management — the operator can only control config within the JTAF group while other config coexists untouched. Many operators want full ownership of the device configuration through Ansible, where what they provide IS the entire box config. Additionally, there is no `commit confirmed` safety mechanism and no way for operators to continuously edit YAML vars and have changes flow back into the Ansible role and playbook automatically.
 
 ## What Changes
 
 - **Two operating modes via a flag**: Introduce a `jtaf_mode` variable (set in role vars, group_vars, or host_vars) that switches between `group` mode (current behavior, default) and `override` mode (new: bare `<configuration>` with `load override` + `commit confirmed` safety).
 - **New override template**: A variant of `ansible.j2` that renders `<configuration>` without the `<groups>` wrapper, producing a complete device configuration.
 - **Commit confirmed safety pattern**: Override mode uses `commit confirmed <N>` → verify device reachability → `commit` (confirm). If the device becomes unreachable after override (e.g., management IP was removed), the timer expires and Junos auto-rolls back.
-- **Bootstrap tool (`jtaf-bootstrap`)**: A new CLI tool that takes either a device IP (SSH + get-config) or XML config file(s), runs the JTAF pipeline, and generates both Ansible role + vars AND a Terraform provider in one step. This is the Day 0 onramp.
 - **Continuous YAML-to-role updates**: When an operator edits `host_vars` or `group_vars` YAML files, re-running the playbook with override mode automatically picks up the changes — Junos candidate config computes the diff internally. No patch engine needed; Junos IS the diff engine.
 - **Generated playbook variants**: `jtaf-ansible` and `jtaf-yang2ansible` gain a `--mode group|override` flag. Override mode generates a `site.yml` with the commit confirmed pattern. Group mode generates the current `load replace` playbook.
 - **Config statements not in YANG**: Paths in the input XML that don't exist in the YANG schema are silently omitted from the generated role/template (same behavior as the Terraform provider). Users can manually add unmodeled config via raw XML passthrough if needed.
@@ -16,7 +15,6 @@ The JTAF Ansible workflow currently wraps all generated configuration inside a J
 
 ### New Capabilities
 - `override-mode`: The `load override` + `commit confirmed` operating mode — template without groups wrapper, playbook with commit confirmed safety pattern, mode flag in role variables.
-- `bootstrap-tool`: CLI tool (`jtaf-bootstrap`) that takes device IP or XML file(s), runs YANG→JSON→role pipeline, and outputs both Ansible role + host_vars/group_vars AND optionally a Terraform provider.
 - `mode-flag`: The mechanism to switch between `group` and `override` modes — variable in role vars, CLI flag on `jtaf-ansible`/`jtaf-yang2ansible`, conditional template rendering.
 
 ### Modified Capabilities
@@ -25,7 +23,7 @@ The JTAF Ansible workflow currently wraps all generated configuration inside a J
 ## Impact
 
 - **Templates**: `ansible.j2` needs a conditional or a sibling `ansible-override.j2` template (4 lines differ — the `<groups>` wrapper).
-- **CLI tools**: `jtaf-ansible`, `jtaf-yang2ansible` gain `--mode` flag. New `jtaf-bootstrap` tool added.
+- **CLI tools**: `jtaf-ansible`, `jtaf-yang2ansible` gain `--mode` flag.
 - **Generated playbooks**: `jtaf-playbook.yml` and example `site.yml` conditionally include override+confirm tasks.
 - **Generated roles**: `tasks/main.yml` unchanged — rendering logic is the same regardless of mode.
 - **Schema/performance**: For override mode to be safe, the trimmed schema should cover all paths the user intends to manage. A schema index (in-memory lookup) may be needed if the full schema is too large for repeated comparisons.

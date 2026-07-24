@@ -1,4 +1,4 @@
-"""Tests for Ansible override mode — template rendering, CLI flags, and jtaf-bootstrap."""
+"""Tests for Ansible override mode — template rendering and CLI flags."""
 
 import json
 import os
@@ -161,34 +161,3 @@ class TestJtafAnsibleCLI:
         if playbook_file.exists():
             content = playbook_file.read_text()
             assert "load: replace" in content
-
-
-# ---------------------------------------------------------------------------
-# Task 6.3: jtaf-bootstrap CLI validation
-# ---------------------------------------------------------------------------
-
-class TestJtafBootstrapCLI:
-    """Test jtaf-bootstrap argument parsing and basic behavior."""
-
-    def test_bootstrap_requires_input(self):
-        """Bootstrap must have either --host or --xml."""
-        result = subprocess.run(
-            [sys.executable, os.path.join(REPO_ROOT, "junosterraform", "jtaf-bootstrap"),
-             "--yang-path", "/tmp", "-t", "test"],
-            capture_output=True, text=True,
-        )
-        assert result.returncode != 0
-        assert "required" in result.stderr.lower() or "error" in result.stderr.lower()
-
-    def test_bootstrap_help(self):
-        """Bootstrap --help should show all expected flags."""
-        result = subprocess.run(
-            [sys.executable, os.path.join(REPO_ROOT, "junosterraform", "jtaf-bootstrap"), "--help"],
-            capture_output=True, text=True,
-        )
-        assert result.returncode == 0
-        assert "--host" in result.stdout
-        assert "--xml" in result.stdout
-        assert "--mode" in result.stdout
-        assert "--yang-path" in result.stdout
-        assert "--grouping-hosts-file" in result.stdout

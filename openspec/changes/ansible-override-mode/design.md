@@ -12,7 +12,6 @@ Key constraint: the `juniper.device.config` Ansible module already supports `loa
 - Add an `override` operating mode that pushes bare `<configuration>` with `load override` and `commit confirmed` safety
 - Keep `group` mode as the default for backward compatibility
 - Provide a mode-switching mechanism (CLI flag + role variable) so operators choose per-deployment
-- Create a `jtaf-bootstrap` tool that generates both Ansible and Terraform artifacts from device config or XML files
 - Ensure continuous YAML edits by operators flow into the playbook without regeneration — Junos handles the diff
 
 **Non-Goals:**
@@ -56,7 +55,7 @@ Key constraint: the `juniper.device.config` Ansible module already supports `loa
 ### Decision 2: Mode flag mechanism
 
 **Choice:** Three-layer mechanism:
-1. CLI flag `--mode group|override` on `jtaf-ansible` / `jtaf-yang2ansible` / `jtaf-bootstrap` — controls what gets generated
+1. CLI flag `--mode group|override` on `jtaf-ansible` / `jtaf-yang2ansible` — controls what gets generated
 2. Role defaults `jtaf_mode: "group"` in generated `defaults/main.yml` — runtime default
 3. Operator can override via `group_vars` or `host_vars` YAML — runtime override
 
@@ -97,20 +96,7 @@ Key constraint: the `juniper.device.config` Ansible module already supports `loa
   when: jtaf_mode | default('group') == 'override'
 ```
 
-### Decision 4: Bootstrap tool architecture
-
-**Choice:** `jtaf-bootstrap` is a Python CLI script that orchestrates existing tools in sequence:
-1. If `--host` provided: SSH via ncclient, `get-config`, save to temp XML
-2. Run `pyang` → JSON (same as existing pipeline)
-3. Run `jtaf-ansible` → Ansible role
-4. Run `jtaf-xml2yaml` → host_vars/group_vars
-5. Run `jtaf-provider` → Terraform provider (always, both outputs)
-
-**Rationale:** Reuses all existing tools. No new rendering logic. The bootstrap tool is a thin orchestrator.
-
-**Alternative considered:** A single monolithic tool. Rejected because it would duplicate logic already in `jtaf-ansible`, `jtaf-provider`, and `jtaf-xml2yaml`.
-
-### Decision 5: Schema performance for override mode
+### Decision 4: Schema performance for override mode
 
 **Choice:** Use the existing `trimmed_schema.json` as-is. If performance becomes an issue with very large schemas (full-model parse), add a one-time index build step that creates an in-memory `dict[path] → node_info` lookup (same pattern as the Go patch engine's `ProcessSchema`).
 
@@ -126,6 +112,5 @@ The concern about "timing issues with large trimmed schemas" applies only during
 
 **[Commit confirmed timer too short]** → Mitigation: Default to 2 minutes (configurable via `jtaf_commit_confirm_minutes`). Document that operators should set this based on their commit time expectations. For large configs, 5 minutes may be needed.
 
-**[Bootstrap tool requires NETCONF access]** → Mitigation: Always support the `--xml` fallback path where operators provide XML files directly (e.g., from `show configuration | display xml` output saved to a file). NETCONF SSH is optional.
 
 **[Backward compatibility]** → Mitigation: Group mode is the default everywhere. No existing behavior changes unless the operator explicitly sets `--mode override` or `jtaf_mode: "override"`.

@@ -23,8 +23,7 @@ setup(
         "jtaf_pyang_plugin/jtaf-pyang-plugindir",
         "junosterraform/jtaf-xml2tf",
         "junosterraform/jtaf-yang2go",
-        "junosterraform/jtaf-yang2ansible",
-        "junosterraform/jtaf-bootstrap"
+        "junosterraform/jtaf-yang2ansible"
     ],
     package_data={
         "terraform_provider": [
