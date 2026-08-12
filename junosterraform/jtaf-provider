@@ -9,7 +9,7 @@ import os
 import shutil
 import os
 from importlib.resources import files, as_file
-from junosterraform.jtaf_common import filter_json_using_xml, load_and_merge_xmls
+from junosterraform.jtaf_common import filter_json_using_xml, load_and_merge_xmls, populate_paths
 
  
 def render_template_and_write(input_template: str, output_file: str, context: dict, description: str):
@@ -96,6 +96,7 @@ def main():
         else:
             with open(args.json_schema) as f:
                 resources = json.load(f)
+        populate_paths(resources)
 
     # Step 2: Render the template into Go code
     with as_file(files('junosterraform').joinpath('__init__.py')) as init_py:

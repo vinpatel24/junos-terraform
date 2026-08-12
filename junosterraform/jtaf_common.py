@@ -364,6 +364,40 @@ def load_and_merge_xmls(xml_file_list: list[str]) -> ElementTree.Element:
     return merged_config
 
 
+def populate_paths(schema):
+    """Set 'path' on every dict node in raw pyang JSON when -x is omitted.
+
+    walk_schema (called with -x) normally sets this during filtering.
+    Uses iterative DFS to handle arbitrarily deep YANG trees.
+    """
+    root = schema.get('root')
+    if not root or not isinstance(root, dict):
+        return
+    root['path'] = ''
+    config_list = root.get('children', [])
+    if not config_list:
+        return
+    config = config_list[0]
+    if not isinstance(config, dict):
+        return
+    config['path'] = ''
+
+    stack = [(config.get('children', []), '')]
+    while stack:
+        children, parent_path = stack.pop()
+        if not isinstance(children, list):
+            continue
+        for node in children:
+            if not isinstance(node, dict):
+                continue
+            node['path'] = parent_path
+            node_children = node.get('children')
+            if node_children:
+                name = node.get('name', '')
+                child_path = (parent_path + '/' + name) if parent_path else name
+                stack.append((node_children, child_path))
+
+
 # Using trimmed json, build mapping of path and path type
 def build_type_map(node, parent_path=""):
     type_map = {}

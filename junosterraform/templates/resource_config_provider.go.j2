@@ -162,7 +162,7 @@ type {{get_full_parent_name(parent, "_", 'True')}}_{{parent.name|capitalize|repl
 	{%- endif %}
 	{%- endfor %}
 }
-func (o {{get_full_parent_name(parent, "_", 'True')}}_{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) AttrTypes() map[string]attr.Type {
+func (o {{get_full_parent_name(parent, "_", 'True')}}_{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) SchemaAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 	    {%- for child in parent['children'] %}
 	    {%- if (child['type'] == 'leaf') %}
@@ -172,12 +172,12 @@ func (o {{get_full_parent_name(parent, "_", 'True')}}_{{parent.name|capitalize|r
 		"{{child.name|replace("-", "_")|replace(".", "_")}}": 	types.ListType{ElemType: types.StringType},
 		{%- endif %}
 	    {%- if child['type'] == 'list' or child['type'] == 'container'%}
-	    "{{child.name|replace("-", "_")|replace(".", "_")}}": 	types.ListType{ElemType: types.ObjectType{AttrTypes: {{get_full_parent_name(child, "_", 'True')}}_{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.AttrTypes()}},
+	    "{{child.name|replace("-", "_")|replace(".", "_")}}": 	types.ListType{ElemType: types.ObjectType{AttrTypes: {{get_full_parent_name(child, "_", 'True')}}_{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttrTypes()}},
 	    {%- endif %}
 	    {%- endfor %}
 	}
 }
-func (o {{get_full_parent_name(parent, "_", 'True')}}_{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) Attributes() map[string]schema.Attribute {
+func (o {{get_full_parent_name(parent, "_", 'True')}}_{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) SchemaAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 	    {%- for child in parent['children'] %}
 	    {%- if (child['type'] == 'leaf') %}
@@ -197,7 +197,7 @@ func (o {{get_full_parent_name(parent, "_", 'True')}}_{{parent.name|capitalize|r
 	    "{{child.name|replace("-", "_")|replace(".", "_")}}": schema.ListNestedAttribute{
 		    Optional: true,
 		    NestedObject: schema.NestedAttributeObject{
-			    Attributes: {{get_full_parent_name(child, "_", 'True')}}_{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.Attributes(),
+			    Attributes: {{get_full_parent_name(child, "_", 'True')}}_{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttributes(),
 	        },
         },
 	    {%- endif %}
@@ -218,15 +218,15 @@ type ConfigResourceModel struct {
 	{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}} types.List `tfsdk:"{{parent.name|replace("-", "_")}}"`
 	{%- endfor %}
 }
-func (o ConfigResourceModel) AttrTypes() map[string]attr.Type {
+func (o ConfigResourceModel) SchemaAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type {
 		"resource_name": 	types.StringType,
 		{%- for parent in parent_list %}
-		"{{parent.name|replace("-", "_")}}": 	types.ListType{ElemType: types.ObjectType{AttrTypes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.AttrTypes()}},
+		"{{parent.name|replace("-", "_")}}": 	types.ListType{ElemType: types.ObjectType{AttrTypes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttrTypes()}},
 		{%- endfor %}
 	}
 }
-func (o ConfigResourceModel) Attributes() map[string]schema.Attribute {
+func (o ConfigResourceModel) SchemaAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"resource_name": schema.StringAttribute {
 			Required: true,
@@ -236,7 +236,7 @@ func (o ConfigResourceModel) Attributes() map[string]schema.Attribute {
 		"{{parent.name|replace("-", "_")}}": schema.ListNestedAttribute{
 			Optional: true,
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.Attributes(),
+				Attributes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttributes(),
 			},
 		},
 		{%- endfor %}
@@ -258,7 +258,7 @@ type {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model struct
 	{%- endif %}
 	{%- endfor %}
 }
-func (o {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) AttrTypes() map[string]attr.Type {
+func (o {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) SchemaAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		{%- for child in parent['children']%}
 		{%- if (child['type'] == 'leaf') %}
@@ -268,12 +268,12 @@ func (o {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) At
 		"{{child.name|replace("-", "_")}}": 	types.ListType{ElemType: types.StringType},
 		{%- endif %}
 		{%- if child['type'] == 'list' or child['type'] == 'container'%}
-		"{{child.name|replace("-", "_")}}": 	types.ListType{ElemType: types.ObjectType{AttrTypes: {{get_full_parent_name(child, "_", "True")}}_{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.AttrTypes()}},
+		"{{child.name|replace("-", "_")}}": 	types.ListType{ElemType: types.ObjectType{AttrTypes: {{get_full_parent_name(child, "_", "True")}}_{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttrTypes()}},
 		{%- endif %}
 		{%- endfor %}
 	}
 }
-func (o {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) Attributes() map[string]schema.Attribute {
+func (o {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) SchemaAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		{%- for child in parent['children']%}
 		{%- if (child['type'] == 'leaf') %}
@@ -293,7 +293,7 @@ func (o {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model) At
 		"{{child.name|replace("-", "_")}}": schema.ListNestedAttribute{
 			Optional: true,
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: {{get_full_parent_name(child, "_", "True")}}_{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.Attributes(),
+				Attributes: {{get_full_parent_name(child, "_", "True")}}_{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttributes(),
 			},
 		},
 		{%- endif %}
@@ -334,7 +334,7 @@ func (r *configResource) Schema(_ context.Context, req resource.SchemaRequest, r
 			"{{parent.name|replace("-", "_")}}": schema.ListNestedAttribute{
 				Optional: true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.Attributes(),
+					Attributes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttributes(),
 				},
 			},
 			{%- endfor %}
@@ -347,6 +347,8 @@ func (r *configResource) Schema(_ context.Context, req resource.SchemaRequest, r
 		{# Below condition is added to skip for loop for nodes which have empty children #}
 		{%- if ele['children'] | length > 0%}
 		for i_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}, v_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}} := range var_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}} {
+			_ = i_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}
+			_ = v_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}
 			{%- for child in ele['children']%}
 			{%- if (child['type'] == 'leaf') %}
 			cfg.{{get_parent_list_with_iterator(child)}}.{{child.name|capitalize|replace("-", "_")|replace(".", "_")}} = v_{{get_full_parent_name(child, "_")}}.{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}.ValueStringPointer()
@@ -512,6 +514,8 @@ func mergeReadStateWithReference(ctx context.Context, observed ConfigResourceMod
         {# Below condition is added to skip for loop for nodes which have empty children #}
 		{%- if ele['children'] | length > 0%}
 		for i_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}, v_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}} := range var_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}} {
+			_ = i_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}
+			_ = v_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}
             {%- for child in ele['children']%}
             {%- if (child['type'] == 'leaf') %}
             config.{{get_parent_list_with_iterator(child)}}.{{child.name|capitalize|replace("-", "_")|replace(".", "_")}} = v_{{get_full_parent_name(child, "_")}}.{{child.name|capitalize|replace("-", "_")|replace(".", "_")}}.ValueStringPointer()
@@ -576,6 +580,7 @@ func (r *configResource) Create(ctx context.Context, req resource.CreateRequest,
         {# Skip loop for nodes with no children #}
 		{%- if ele['children'] | length > 0 %}
 		for i_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}, v_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}} := range v_{{get_full_parent_name(ele, "_")}}.{{ele.name|capitalize|replace("-", "_")|replace(".", "_")}} {
+			_ = v_{{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}
             var {{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}_model {{get_full_parent_name(ele, "_", "True")}}_{{ele.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model
 
             {%- for child in ele['children'] %}
@@ -619,11 +624,11 @@ func (r *configResource) Create(ctx context.Context, req resource.CreateRequest,
         // Write {{ele.name}} field as Null when empty, else concrete list
         if len({{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}_List) == 0 {
             {{get_full_parent_name(ele, "_")}}_model.{{ele.name|capitalize|replace("-", "_")|replace(".", "_")}} =
-                types.ListNull(types.ObjectType{AttrTypes: {{get_full_parent_name(ele, "_", 'True')}}_{{ele.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.AttrTypes()})
+                types.ListNull(types.ObjectType{AttrTypes: {{get_full_parent_name(ele, "_", 'True')}}_{{ele.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttrTypes()})
         } else {
             {{get_full_parent_name(ele, "_")}}_model.{{ele.name|capitalize|replace("-", "_")|replace(".", "_")}}, _ =
                 types.ListValueFrom(ctx,
-                    types.ObjectType{AttrTypes: {{get_full_parent_name(ele, "_", 'True')}}_{{ele.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.AttrTypes()},
+                    types.ObjectType{AttrTypes: {{get_full_parent_name(ele, "_", 'True')}}_{{ele.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttrTypes()},
                     {{get_full_parent_name(ele, "_")}}_{{ele.name|replace("-", "_")|replace(".", "_")}}_List,
                 )
         }
@@ -636,7 +641,7 @@ func configToModel(ctx context.Context, config xml_Configuration) ConfigResource
     {%- for parent in parent_list %}
     // Initialize {{parent.name}} as Null; only materialize when we have elements
     state.{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}} =
-        types.ListNull(types.ObjectType{AttrTypes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.AttrTypes()})
+        types.ListNull(types.ObjectType{AttrTypes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttrTypes()})
 
     // Build list from device
     {{parent.name|replace("-", "_")}}_List := make([]{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model,
@@ -644,6 +649,7 @@ func configToModel(ctx context.Context, config xml_Configuration) ConfigResource
 
 	{%- if parent['children'] | length > 0 %}
     for i_{{parent.name|replace("-", "_")}}, v_{{parent.name|replace("-", "_")}} := range config.{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}} {
+		_ = v_{{parent.name|replace("-", "_")}}
         var {{parent.name|replace("-", "_")}}_model {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model
 
         {%- for child in parent['children'] %}
@@ -689,11 +695,11 @@ func configToModel(ctx context.Context, config xml_Configuration) ConfigResource
     // Write parent list as Null when empty
     if len({{parent.name|replace("-", "_")}}_List) == 0 {
         state.{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}} =
-            types.ListNull(types.ObjectType{AttrTypes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.AttrTypes()})
+            types.ListNull(types.ObjectType{AttrTypes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttrTypes()})
     } else {
         state.{{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}, _ =
             types.ListValueFrom(ctx,
-                types.ObjectType{AttrTypes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.AttrTypes()},
+                types.ObjectType{AttrTypes: {{parent.name|capitalize|replace("-", "_")|replace(".", "_")}}_Model{}.SchemaAttrTypes()},
                 {{parent.name|replace("-", "_")}}_List,
             )
     }
