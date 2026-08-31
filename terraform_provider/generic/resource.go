@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
 // ConfigResource is the generic schema-driven resource.
@@ -62,7 +63,10 @@ func (r *ConfigResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 }
 
 func (r *ConfigResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.State.Raw = req.Plan.Raw
+	resp.State = tfsdk.State{
+		Schema: req.Plan.Schema,
+		Raw:    req.Plan.Raw.Copy(),
+	}
 }
 
 func (r *ConfigResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -70,7 +74,10 @@ func (r *ConfigResource) Read(ctx context.Context, req resource.ReadRequest, res
 }
 
 func (r *ConfigResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	resp.State.Raw = req.Plan.Raw
+	resp.State = tfsdk.State{
+		Schema: req.Plan.Schema,
+		Raw:    req.Plan.Raw.Copy(),
+	}
 }
 
 func (r *ConfigResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
