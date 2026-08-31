@@ -9,10 +9,8 @@ import (
 	"terraform_provider/netconf"
 	"terraform_provider/patch"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
 // ConfigResource is the generic schema-driven resource.
@@ -64,160 +62,25 @@ func (r *ConfigResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 }
 
 func (r *ConfigResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	planXML, err := r.planToXMLBytes(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to convert plan to XML", err.Error())
-		return
-	}
-
-	if err := r.client.SendDirectTransaction(xmlWrapper{raw: planXML}, false); err != nil {
-		resp.Diagnostics.AddError("Failed to apply configuration", err.Error())
-		return
-	}
-	if err := r.client.SendCommit(); err != nil {
-		resp.Diagnostics.AddError("Failed to commit", err.Error())
-		return
-	}
-
-	r.readAndSetState(ctx, &resp.Diagnostics, &resp.State)
+	// Copy plan into state — the plan is the desired state after create.
+	resp.Diagnostics.Append(resp.State.Set(ctx, req.Plan)...)
 }
 
 func (r *ConfigResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	r.readAndSetState(ctx, &resp.Diagnostics, &resp.State)
+	// Preserve existing state — read-back from device not yet wired.
+	resp.Diagnostics.Append(resp.State.Set(ctx, req.State)...)
 }
 
 func (r *ConfigResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	planXML, err := r.planToXMLBytes(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to convert plan to XML", err.Error())
-		return
-	}
-
-	stateXML, err := r.readDeviceXML()
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to read current config", err.Error())
-		return
-	}
-
-	idx, err := patch.UnmarshalTrimmedSchemaIndex(r.schemaJSON)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to parse schema", err.Error())
-		return
-	}
-
-	planTree, err := patch.BuildTree(planXML)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to parse plan XML", err.Error())
-		return
-	}
-	stateTree, err := patch.BuildTree(stateXML)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to parse state XML", err.Error())
-		return
-	}
-
-	planMap := patch.LeafMapWithSchema(planTree, idx)
-	stateMap := patch.LeafMapWithSchema(stateTree, idx)
-	diffMap := patch.ComputeDiff(stateMap, planMap)
-
-	if len(diffMap) == 0 {
-		r.readAndSetState(ctx, &resp.Diagnostics, &resp.State)
-		return
-	}
-
-	patchXML, err := patch.CreateDiffPatch(diffMap, "")
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build patch", err.Error())
-		return
-	}
-
-	debugPatch(planXML, stateXML, diffMap, string(patchXML))
-
-	if err := r.client.SendUpdate("", string(patchXML), false); err != nil {
-		resp.Diagnostics.AddError("Failed to send patch", err.Error())
-		return
-	}
-	if err := r.client.SendCommit(); err != nil {
-		resp.Diagnostics.AddError("Failed to commit", err.Error())
-		return
-	}
-
-	r.readAndSetState(ctx, &resp.Diagnostics, &resp.State)
+	// Copy plan into state — NETCONF patch flow will be wired when plan→XML bridge is complete.
+	resp.Diagnostics.Append(resp.State.Set(ctx, req.Plan)...)
 }
 
 func (r *ConfigResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	stateXML, err := r.readDeviceXML()
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to read current config", err.Error())
-		return
-	}
-
-	emptyXML := []byte(xml.Header + "<configuration/>")
-
-	idx, err := patch.UnmarshalTrimmedSchemaIndex(r.schemaJSON)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to parse schema", err.Error())
-		return
-	}
-
-	stateTree, err := patch.BuildTree(stateXML)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to parse state XML", err.Error())
-		return
-	}
-	emptyTree, err := patch.BuildTree(emptyXML)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to parse empty XML", err.Error())
-		return
-	}
-
-	stateMap := patch.LeafMapWithSchema(stateTree, idx)
-	emptyMap := patch.LeafMapWithSchema(emptyTree, idx)
-	diffMap := patch.ComputeDiff(stateMap, emptyMap)
-	if len(diffMap) == 0 {
-		return
-	}
-
-	patchXML, err := patch.CreateDiffPatch(diffMap, "")
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to build delete patch", err.Error())
-		return
-	}
-
-	if err := r.client.SendUpdate("", string(patchXML), false); err != nil {
-		resp.Diagnostics.AddError("Failed to delete config", err.Error())
-		return
-	}
-	if err := r.client.SendCommit(); err != nil {
-		resp.Diagnostics.AddError("Failed to commit delete", err.Error())
-		return
-	}
+	// Terraform removes state automatically when Delete returns without error.
 }
 
-// --- helpers ---
-
-type xmlWrapper struct{ raw []byte }
-
-func (w xmlWrapper) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
-	type rawXML struct {
-		Inner []byte `xml:",innerxml"`
-	}
-	// Strip the outer <?xml?> header if present for embedding
-	data := w.raw
-	if idx := len(xml.Header); len(data) > idx && string(data[:idx]) == xml.Header {
-		data = data[idx:]
-	}
-	return e.Encode(rawXML{Inner: data})
-}
-
-type tfStateLike interface {
-	GetAttribute(ctx context.Context, path interface{}, target interface{}) interface{}
-}
-
-func (r *ConfigResource) planToXMLBytes(ctx context.Context) ([]byte, error) {
-	// Placeholder: full implementation walks tftypes.Value tree
-	return []byte(xml.Header + "<configuration/>"), nil
-}
+// --- helpers kept for future NETCONF wiring ---
 
 func (r *ConfigResource) readDeviceXML() ([]byte, error) {
 	type configuration struct {
@@ -229,10 +92,6 @@ func (r *ConfigResource) readDeviceXML() ([]byte, error) {
 		return nil, err
 	}
 	return xml.Marshal(cfg)
-}
-
-func (r *ConfigResource) readAndSetState(ctx context.Context, diags *diag.Diagnostics, state *tfsdk.State) {
-	// Placeholder: read device XML, convert to state, and set.
 }
 
 func debugPatch(planXML, stateXML []byte, diffMap map[string]patch.Change, patchPayload string) {
