@@ -62,22 +62,18 @@ func (r *ConfigResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 }
 
 func (r *ConfigResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Copy plan into state — the plan is the desired state after create.
-	resp.Diagnostics.Append(resp.State.Set(ctx, req.Plan)...)
+	resp.State.Raw = req.Plan.Raw
 }
 
 func (r *ConfigResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Preserve existing state — read-back from device not yet wired.
-	resp.Diagnostics.Append(resp.State.Set(ctx, req.State)...)
 }
 
 func (r *ConfigResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Copy plan into state — NETCONF patch flow will be wired when plan→XML bridge is complete.
-	resp.Diagnostics.Append(resp.State.Set(ctx, req.Plan)...)
+	resp.State.Raw = req.Plan.Raw
 }
 
 func (r *ConfigResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	// Terraform removes state automatically when Delete returns without error.
 }
 
 // --- helpers kept for future NETCONF wiring ---
